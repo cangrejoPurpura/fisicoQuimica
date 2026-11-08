@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Física y Química UNAJ — Unidad 6: Electricidad y Bioelectricidad (Nebulosa Cuántica)</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="https://www.youtube.com/iframe_api"></script>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="min-h-screen flex flex-col">
+
+  <!-- BARRA SUPERIOR STICKY (Exactamente como el wireframe: Unidad 6 | Unidad 7 | Unidad 8 | Ejercicios | Parcial + PDF) -->
+  <nav class="sticky-cosmic-nav">
+    <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-center gap-3 md:gap-5">
+      <div class="flex items-center gap-2 mr-1">
+        <img src="assets/capy_banana.webp" alt="Capibara" class="w-10 h-10 object-cover rounded-full anim-orbit">
+      </div>
+      <button id="navBtnU6" type="button" onclick="switchTopNav('u6')" class="quantum-nav-btn active">Unidad 6</button>
+      <button id="navBtnU7" type="button" onclick="switchTopNav('u7')" class="quantum-nav-btn">Unidad 7</button>
+      <button id="navBtnU8" type="button" onclick="switchTopNav('u8')" class="quantum-nav-btn">Unidad 8</button>
+      <button id="navBtnEj" type="button" onclick="switchTopNav('ejercicios')" class="quantum-nav-btn">Ejercicios</button>
+      <button id="navBtnParcial" type="button" onclick="switchTopNav('parcial')" class="quantum-nav-btn">Parcial</button>
+      <button id="navBtnPdfModal" type="button" onclick="openPdfModal(currentUnit, 1)" class="quantum-nav-btn !text-sm">📄 Visor PDF</button>
+    </div>
+  </nav>
+
+  <!-- CONTENEDOR PRINCIPAL -->
+  <main class="max-w-7xl w-full mx-auto px-3 md:px-6 py-4 space-y-7 flex-1">
+
+    <!-- FILA SUPERIOR: 2 CAJAS LADO A LADO (Izquierda: Video + Barritas insinuantes | Derecha: Nombre del video + Conceptos Principales Scrolleable) -->
+    <section id="topVideoSection" class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+
+      <!-- CAJA SUPERIOR IZQUIERDA: SOLO EL VIDEO Y ABAJO LAS BARRITAS SEPARADAS INSINUANTES -->
+      <div class="lg:col-span-6 nebula-blur-box p-4 md:p-5 flex flex-col justify-between">
+        <div class="w-full flex-1 flex flex-col justify-center">
+          <div class="relative w-full aspect-video rounded-2xl overflow-hidden shadow-2xl bg-black/80">
+            <iframe
+              id="unitVideoIframe"
+              class="w-full h-full"
+              src="https://www.youtube-nocookie.com/embed/qlwjNDi5ras?enablejsapi=1&rel=0"
+              title="Reproductor de Videos por Unidad"
+              frameborder="0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              allowfullscreen>
+            </iframe>
+          </div>
+        </div>
+        <!-- Pequeñas barritas separadas abajo del video -->
+        <div id="videoBarsContainer" class="video-bars-row" aria-label="Navegación entre videos de menor a mayor complejidad"></div>
+      </div>
+
+      <!-- CAJA SUPERIOR DERECHA: NOMBRE DEL VIDEO + CONCEPTOS PRINCIPALES DEL VIDEO (SCROLLEABLE) -->
+      <div class="lg:col-span-6 nebula-blur-box p-4 md:p-6 flex flex-col max-h-[430px]">
+        <div id="videoBoxTitle" class="pb-3 mb-2"></div>
+        <div id="videoBoxConceptsContent" class="flex-1 cosmic-scroll px-2"></div>
+      </div>
+
+    </section>
+
+    <!-- FILA CENTRAL: BARRA DINÁMICA DE BOTONES 'CONCEPTO' + DESARROLLO DE INFORMACIÓN UNIDAD 6 (SCROLLEABLE) -->
+    <section id="middleConceptSection" class="nebula-blur-box p-4 md:p-7">
+      <!-- Barra dinámica de píldoras de concepto -->
+      <div id="dynamicConceptPillsBar" class="concept-pill-bar"></div>
+
+      <!-- Caja scrolleable de desarrollo de información rigurosa con páginas del PDF al final de cada concepto -->
+      <div id="unitDevelopmentContainer" class="max-h-[680px] cosmic-scroll px-2 md:px-5 py-2"></div>
+    </section>
+
+    <!-- FILA INFERIOR: 2 CAJAS SCROLLEABLES LADO A LADO (EJERCICIOS SCROLLEABLE | RESOLUCIONES DE EJERCICIOS SCROLLEABLE) -->
+    <section id="bottomExercisesSection" class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch pb-8">
+
+      <!-- CAJA INFERIOR IZQUIERDA: EJERCICIOS (SCROLLEABLE) — [PRÁCTICA GUIADA] + [SIMULACRO DE PARCIAL] -->
+      <div class="lg:col-span-6 nebula-blur-box p-4 md:p-6 flex flex-col max-h-[680px]">
+        <div id="bottomLeftExercisesBox" class="flex-1 cosmic-scroll px-2"></div>
+      </div>
+
+      <!-- CAJA INFERIOR DERECHA: RESOLUCIONES DE EJERCICIOS (SCROLLEABLE) — [RESOLUCIÓN DIRECTA] -->
+      <div class="lg:col-span-6 nebula-blur-box p-4 md:p-6 flex flex-col max-h-[680px]">
+        <div id="bottomRightResolutionsBox" class="flex-1 cosmic-scroll px-2"></div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- MODAL VISOR DE PDF INTEGRADO (Para profundizar en las páginas indicadas al final de cada concepto sin salir de la web) -->
+  <div id="pdfModalOverlay" class="hidden fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-xl flex items-center justify-center p-3 md:p-6">
+    <div class="nebula-blur-box w-full max-w-4xl max-h-[90vh] flex flex-col p-4 md:p-6">
+      <div class="flex flex-wrap items-center justify-between gap-2 pb-3 mb-3">
+        <div class="flex items-center gap-2">
+          <img src="assets/capy_hat_cherry.webp" alt="Capibara PDF" class="w-10 h-10 object-cover rounded-full">
+          <select id="modalDocSelect" onchange="changeModalPdfDoc(this.value)" class="bg-slate-900/90 text-amber-300 text-xs md:text-sm font-bold rounded-full px-3 py-1.5 font-tier-3 focus:outline-none">
+            <option value="u6">📄 Unidad 6 2025.pdf (14 páginas)</option>
+            <option value="u7">📄 Unidad 7 2025.pdf (10 páginas)</option>
+            <option value="u8">📄 Unidad 8 2025.pdf (16 páginas)</option>
+            <option value="parcial_est">📋 Estructura Segundo Parcial 2025.pdf</option>
+          </select>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <button type="button" onclick="changeModalPdfPage(-1)" class="px-3 py-1 text-xs font-bold rounded-full bg-slate-800 hover:bg-slate-700 text-white">◀ Ant.</button>
+          <select id="modalPageSelect" onchange="jumpModalPdfPage(this.value)" class="bg-slate-900 text-cyan-200 text-xs font-bold rounded-full px-3 py-1"></select>
+          <button type="button" onclick="changeModalPdfPage(1)" class="px-3 py-1 text-xs font-bold rounded-full bg-slate-800 hover:bg-slate-700 text-white">Sig. ▶</button>
+          <button type="button" onclick="closePdfModal()" class="px-3.5 py-1 text-xs font-bold rounded-full bg-amber-500 hover:bg-amber-400 text-slate-950 ml-2">✕ Cerrar PDF</button>
+        </div>
+      </div>
+
+      <div id="modalPdfPageBody" class="flex-1 cosmic-scroll p-2"></div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

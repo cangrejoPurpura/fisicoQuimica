@@ -1,0 +1,331 @@
+/* ==========================================================================
+   TEMÁTICA ESPACIAL / CUÁNTICA DE NEBULOSA + JERARQUÍA DE FUENTES
+   Orden de prioridad tipográfica:
+   1. 'bingbong'
+   2. 'adabelle handwriting'
+   3. 'babydoll'
+   4. 'jojoba'
+   5. 'gochi hand'
+   ========================================================================== */
+@import url('https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Fredoka:wght@500;600;700&family=Gochi+Hand&family=Patrick+Hand&family=Short+Stack&display=swap');
+
+:root {
+  --font-1-bingbong: 'bingbong', 'Fredoka', 'Gochi Hand', cursive, sans-serif;
+  --font-2-adabelle: 'adabelle handwriting', 'Caveat', 'Gochi Hand', cursive, sans-serif;
+  --font-3-babydoll: 'babydoll', 'Short Stack', 'Gochi Hand', cursive, sans-serif;
+  --font-4-jojoba: 'jojoba', 'Patrick Hand', 'Gochi Hand', cursive, sans-serif;
+  --font-5-gochi: 'Gochi Hand', 'Patrick Hand', cursive, sans-serif;
+
+  --nebula-deep: #060919;
+  --nebula-indigo: rgba(14, 21, 48, 0.52);
+  --nebula-amber: #f59e0b;
+  --nebula-gold: #fbbf24;
+  --nebula-cyan: #38bdf8;
+  --nebula-violet: #a855f7;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  background-color: var(--nebula-deep);
+  background-image:
+    radial-gradient(circle at 18% 22%, rgba(56, 189, 248, 0.16) 0%, transparent 45%),
+    radial-gradient(circle at 82% 65%, rgba(245, 158, 11, 0.22) 0%, transparent 50%),
+    radial-gradient(circle at 50% 50%, rgba(168, 85, 247, 0.14) 0%, transparent 60%),
+    linear-gradient(180deg, rgba(5, 8, 22, 0.72) 0%, rgba(10, 15, 36, 0.80) 55%, rgba(6, 9, 25, 0.88) 100%),
+    url("assets/nebula_bg.webp");
+  background-size: cover;
+  background-position: center center;
+  background-attachment: fixed;
+  color: #f8fafc;
+  font-family: var(--font-5-gochi);
+  text-align: center;
+  overflow-x: hidden;
+  /* Fade-in suave al abrir por primera vez sin efectos bruscos */
+  opacity: 0;
+  animation: nebulaFadeIn 0.9s ease-out forwards;
+}
+
+@keyframes nebulaFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Jerarquía de fuentes según el orden pedido */
+.font-tier-1 {
+  font-family: var(--font-1-bingbong);
+  letter-spacing: 0.03em;
+}
+.font-tier-2 {
+  font-family: var(--font-2-adabelle);
+  letter-spacing: 0.02em;
+}
+.font-tier-3 {
+  font-family: var(--font-3-babydoll);
+  letter-spacing: 0.02em;
+}
+.font-tier-4 {
+  font-family: var(--font-4-jojoba);
+  letter-spacing: 0.015em;
+}
+.font-tier-5 {
+  font-family: var(--font-5-gochi);
+  letter-spacing: 0.015em;
+}
+
+/* Cajas contenedoras difuminadas (blur intenso y sin línea divisoria con el alrededor) */
+.nebula-blur-box {
+  position: relative;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(15, 23, 52, 0.68) 0%,
+    rgba(12, 18, 42, 0.54) 72%,
+    rgba(10, 15, 35, 0.22) 96%,
+    rgba(10, 15, 35, 0.02) 100%
+  );
+  backdrop-filter: blur(28px) saturate(145%);
+  -webkit-backdrop-filter: blur(28px) saturate(145%);
+  border: none;
+  border-radius: 28px;
+  box-shadow:
+    0 0 42px 18px rgba(10, 16, 38, 0.55),
+    inset 0 0 32px 12px rgba(56, 189, 248, 0.05);
+  text-align: center;
+}
+
+/* Barra Sticky Superior */
+.sticky-cosmic-nav {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: linear-gradient(180deg, rgba(6, 10, 26, 0.90) 0%, rgba(10, 16, 40, 0.72) 85%, rgba(10, 16, 40, 0.0) 100%);
+  backdrop-filter: blur(22px);
+  -webkit-backdrop-filter: blur(22px);
+  border: none;
+  padding: 0.75rem 1rem 1rem 1rem;
+}
+
+/* Botones estilo Nebulosa Cuántica */
+.quantum-nav-btn {
+  font-family: var(--font-1-bingbong);
+  font-size: 1.08rem;
+  padding: 0.45rem 1.25rem;
+  border-radius: 9999px;
+  border: none;
+  color: #e2e8f0;
+  background: radial-gradient(circle at 30% 30%, rgba(56, 189, 248, 0.22), rgba(30, 41, 82, 0.55));
+  box-shadow: 0 0 18px 4px rgba(15, 23, 42, 0.45);
+  cursor: pointer;
+  transition: transform 0.22s ease, background 0.25s ease, box-shadow 0.25s ease;
+}
+
+.quantum-nav-btn:hover {
+  transform: translateY(-2px);
+  color: #ffffff;
+  background: radial-gradient(circle at 30% 30%, rgba(245, 158, 11, 0.48), rgba(56, 189, 248, 0.35));
+  box-shadow: 0 0 24px 6px rgba(245, 158, 11, 0.32);
+}
+
+.quantum-nav-btn.active {
+  color: #090d1e;
+  font-weight: 700;
+  background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 55%, #38bdf8 100%);
+  box-shadow: 0 0 26px 6px rgba(245, 158, 11, 0.48);
+}
+
+/* Pequeñas barritas insinuantes debajo del video */
+.video-bars-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.65rem 0.5rem 0.2rem 0.5rem;
+  width: 100%;
+}
+
+.video-bar-pill {
+  position: relative;
+  flex: 1;
+  max-width: 68px;
+  height: 9px;
+  border-radius: 9999px;
+  border: none;
+  background: rgba(148, 163, 184, 0.28);
+  cursor: pointer;
+  overflow: hidden;
+  transition: height 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+.video-bar-pill:hover {
+  height: 12px;
+  transform: scaleY(1.12);
+  background: rgba(56, 189, 248, 0.48);
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.6);
+}
+
+.video-bar-pill.active {
+  height: 12px;
+  background: linear-gradient(90deg, #fbbf24 0%, #f59e0b 55%, #38bdf8 100%);
+  box-shadow: 0 0 16px rgba(251, 191, 36, 0.75);
+}
+
+.video-bar-progress {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  background: rgba(251, 191, 36, 0.65);
+  border-radius: 9999px;
+  pointer-events: none;
+}
+
+/* Barra dinámica de botones 'concepto' */
+.concept-pill-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+  padding: 0.75rem 1rem;
+  border-radius: 9999px;
+  background: radial-gradient(ellipse at center, rgba(30, 41, 82, 0.65) 0%, rgba(15, 23, 42, 0.25) 95%);
+  box-shadow: 0 0 28px 8px rgba(10, 15, 35, 0.45);
+  margin-bottom: 1rem;
+}
+
+.concept-btn {
+  font-family: var(--font-3-babydoll);
+  font-size: 0.96rem;
+  padding: 0.4rem 1.05rem;
+  border-radius: 9999px;
+  border: none;
+  color: #f1f5f9;
+  background: rgba(15, 23, 42, 0.65);
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.18);
+  cursor: pointer;
+  transition: all 0.22s ease;
+}
+
+.concept-btn:hover {
+  transform: translateY(-1px) scale(1.03);
+  background: rgba(56, 189, 248, 0.32);
+  color: #ffffff;
+  box-shadow: 0 0 16px rgba(56, 189, 248, 0.45);
+}
+
+.concept-btn.active {
+  background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 60%, #38bdf8 100%);
+  color: #090d1e;
+  font-weight: 700;
+  box-shadow: 0 0 20px rgba(245, 158, 11, 0.55);
+}
+
+/* Cajas internas scrolleables */
+.cosmic-scroll {
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(245, 158, 11, 0.55) rgba(15, 23, 42, 0.3);
+}
+
+.cosmic-scroll::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+.cosmic-scroll::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.25);
+  border-radius: 9999px;
+}
+.cosmic-scroll::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, rgba(245, 158, 11, 0.7), rgba(56, 189, 248, 0.7));
+  border-radius: 9999px;
+}
+
+/* Animaciones suaves para Capibaras e Íconos de Ciencia */
+@keyframes floatCapy {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-7px) rotate(2deg); }
+}
+
+@keyframes pulseQuantum {
+  0%, 100% { transform: scale(1); filter: drop-shadow(0 0 8px rgba(56, 189, 248, 0.45)); }
+  50% { transform: scale(1.07); filter: drop-shadow(0 0 16px rgba(251, 191, 36, 0.75)); }
+}
+
+@keyframes orbitBadge {
+  0%, 100% { transform: translateX(0px) translateY(0px); }
+  25% { transform: translateX(4px) translateY(-4px); }
+  50% { transform: translateX(0px) translateY(-7px); }
+  75% { transform: translateX(-4px) translateY(-4px); }
+}
+
+.anim-capy {
+  animation: floatCapy 3.8s ease-in-out infinite;
+  border-radius: 18px;
+  box-shadow: 0 0 22px rgba(245, 158, 11, 0.28);
+}
+
+.anim-sci-icon {
+  animation: pulseQuantum 3.2s ease-in-out infinite;
+  border-radius: 14px;
+}
+
+.anim-orbit {
+  animation: orbitBadge 4.2s ease-in-out infinite;
+}
+
+/* Bloques de fórmulas, despejes y trampas de examen centrados */
+.formula-nebula-card {
+  font-family: var(--font-4-jojoba);
+  background: radial-gradient(ellipse at center, rgba(30, 41, 82, 0.72) 0%, rgba(15, 23, 42, 0.38) 92%);
+  border-radius: 22px;
+  padding: 1.1rem 1.25rem;
+  margin: 0.85rem auto;
+  max-width: 860px;
+  box-shadow: 0 0 26px 6px rgba(56, 189, 248, 0.14);
+  text-align: center;
+}
+
+.trap-nebula-card {
+  font-family: var(--font-4-jojoba);
+  background: radial-gradient(ellipse at center, rgba(120, 53, 15, 0.68) 0%, rgba(69, 26, 3, 0.35) 95%);
+  border-radius: 22px;
+  padding: 1rem 1.25rem;
+  margin: 0.85rem auto;
+  max-width: 840px;
+  box-shadow: 0 0 24px 6px rgba(245, 158, 11, 0.22);
+  color: #fef3c7;
+  text-align: center;
+}
+
+.result-highlight-box {
+  display: inline-block;
+  padding: 0.7rem 1.4rem;
+  border-radius: 18px;
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.28) 0%, rgba(56, 189, 248, 0.28) 100%);
+  box-shadow: 0 0 22px 4px rgba(16, 185, 129, 0.35);
+  color: #ecfdf5;
+  font-weight: 700;
+  margin: 0.65rem auto;
+}
+
+.pdf-ref-footer {
+  font-family: var(--font-3-babydoll);
+  background: radial-gradient(ellipse at center, rgba(56, 189, 248, 0.22) 0%, rgba(15, 23, 42, 0.4) 95%);
+  border-radius: 9999px;
+  padding: 0.55rem 1.25rem;
+  margin: 1rem auto 0.25rem auto;
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+}
