@@ -1,23 +1,23 @@
 /* ==========================================================================
-   TEMÁTICA ESPACIAL / CUÁNTICA DE NEBULOSA + JERARQUÍA DE FUENTES
-   Orden de prioridad tipográfica:
-   1. 'bingbong'
-   2. 'adabelle handwriting'
-   3. 'babydoll'
-   4. 'jojoba'
-   5. 'gochi hand'
+   ESTILOS GENERALES — NEBULOSA CUÁNTICA + TIPOGRAFÍAS GOOGLE SANS & ROBOTO
    ========================================================================== */
-@import url('https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Fredoka:wght@500;600;700&family=Gochi+Hand&family=Patrick+Hand&family=Short+Stack&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Fredoka:wght@500;600;700&family=Gochi+Hand&family=Patrick+Hand&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Roboto:ital,wght@0,400;0,500;0,700;1,400&family=Short+Stack&display=swap');
 
 :root {
+  /* Fuentes para títulos, subtítulos, botones y oraciones cortas referenciadas */
   --font-1-bingbong: 'bingbong', 'Fredoka', 'Gochi Hand', cursive, sans-serif;
   --font-2-adabelle: 'adabelle handwriting', 'Caveat', 'Gochi Hand', cursive, sans-serif;
   --font-3-babydoll: 'babydoll', 'Short Stack', 'Gochi Hand', cursive, sans-serif;
   --font-4-jojoba: 'jojoba', 'Patrick Hand', 'Gochi Hand', cursive, sans-serif;
   --font-5-gochi: 'Gochi Hand', 'Patrick Hand', cursive, sans-serif;
 
-  --nebula-deep: #060919;
-  --nebula-indigo: rgba(14, 21, 48, 0.52);
+  /* Fuente Google Sans para todos los textos de lectura */
+  --font-text-googlesans: 'Google Sans', 'Product Sans', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+
+  /* Fuente Roboto exclusiva para todas las fórmulas y expresiones matemáticas */
+  --font-formula-roboto: 'Roboto', sans-serif;
+
+  --nebula-deep: #050816;
   --nebula-amber: #f59e0b;
   --nebula-gold: #fbbf24;
   --nebula-cyan: #38bdf8;
@@ -37,20 +37,9 @@ body {
   padding: 0;
   min-height: 100vh;
   background-color: var(--nebula-deep);
-  background-image:
-    radial-gradient(circle at 18% 22%, rgba(56, 189, 248, 0.16) 0%, transparent 45%),
-    radial-gradient(circle at 82% 65%, rgba(245, 158, 11, 0.22) 0%, transparent 50%),
-    radial-gradient(circle at 50% 50%, rgba(168, 85, 247, 0.14) 0%, transparent 60%),
-    linear-gradient(180deg, rgba(5, 8, 22, 0.72) 0%, rgba(10, 15, 36, 0.80) 55%, rgba(6, 9, 25, 0.88) 100%),
-    url("assets/nebula_bg.webp");
-  background-size: cover;
-  background-position: center center;
-  background-attachment: fixed;
   color: #f8fafc;
-  font-family: var(--font-5-gochi);
-  text-align: center;
+  font-family: var(--font-text-googlesans);
   overflow-x: hidden;
-  /* Fade-in suave al abrir por primera vez sin efectos bruscos */
   opacity: 0;
   animation: nebulaFadeIn 0.9s ease-out forwards;
 }
@@ -60,64 +49,268 @@ body {
   to { opacity: 1; }
 }
 
-/* Jerarquía de fuentes según el orden pedido */
-.font-tier-1 {
-  font-family: var(--font-1-bingbong);
-  letter-spacing: 0.03em;
-}
-.font-tier-2 {
-  font-family: var(--font-2-adabelle);
-  letter-spacing: 0.02em;
-}
-.font-tier-3 {
-  font-family: var(--font-3-babydoll);
-  letter-spacing: 0.02em;
-}
-.font-tier-4 {
-  font-family: var(--font-4-jojoba);
-  letter-spacing: 0.015em;
-}
-.font-tier-5 {
-  font-family: var(--font-5-gochi);
-  letter-spacing: 0.015em;
+/* ==========================================================================
+   FONDO DE NEBULOSA CON MOVIMIENTO SUTIL Y BRILLO LENTO DE ESTRELLAS/NUBES
+   ========================================================================== */
+.nebula-bg-wrapper {
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  overflow: hidden;
+  background-color: #050816;
 }
 
-/* Cajas contenedoras difuminadas (blur intenso y sin línea divisoria con el alrededor) */
+.nebula-bg-image {
+  position: absolute;
+  inset: -6%;
+  width: 112%;
+  height: 112%;
+  background-image:
+    linear-gradient(180deg, rgba(5, 8, 22, 0.58) 0%, rgba(10, 15, 36, 0.68) 55%, rgba(5, 8, 22, 0.82) 100%),
+    url("assets/nebula_bg.webp");
+  background-size: cover;
+  background-position: center center;
+  animation: subtleNebulaDrift 44s ease-in-out infinite alternate;
+  will-change: transform;
+}
+
+@keyframes subtleNebulaDrift {
+  0% { transform: scale(1.0) translate3d(0px, 0px, 0px); }
+  50% { transform: scale(1.045) translate3d(-14px, 9px, 0px); }
+  100% { transform: scale(1.025) translate3d(12px, -10px, 0px); }
+}
+
+.nebula-clouds-glow {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 22% 28%, rgba(56, 189, 248, 0.20) 0%, transparent 45%),
+    radial-gradient(circle at 78% 62%, rgba(245, 158, 11, 0.24) 0%, transparent 48%),
+    radial-gradient(circle at 48% 45%, rgba(168, 85, 247, 0.16) 0%, transparent 55%);
+  animation: slowCloudGlow 11s ease-in-out infinite alternate;
+  pointer-events: none;
+}
+
+@keyframes slowCloudGlow {
+  0% { opacity: 0.45; filter: brightness(0.92); }
+  50% { opacity: 0.88; filter: brightness(1.15); }
+  100% { opacity: 0.55; filter: brightness(0.98); }
+}
+
+#starfieldCanvas {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+  pointer-events: none;
+}
+
+/* ==========================================================================
+   CLASES TIPOGRÁFICAS
+   ========================================================================== */
+.font-tier-1 { font-family: var(--font-1-bingbong); letter-spacing: 0.03em; }
+.font-tier-2 { font-family: var(--font-2-adabelle); letter-spacing: 0.02em; }
+.font-tier-3 { font-family: var(--font-3-babydoll); letter-spacing: 0.02em; }
+.font-tier-4 { font-family: var(--font-4-jojoba); letter-spacing: 0.015em; }
+.font-tier-5 { font-family: var(--font-5-gochi); letter-spacing: 0.015em; }
+
+/* Textos de párrafos en Google Sans, justificados a izquierda y derecha y espaciados */
+.prose-justify {
+  font-family: var(--font-text-googlesans);
+  text-align: justify;
+  text-justify: inter-word;
+  line-height: 1.95;
+  letter-spacing: 0.012em;
+  margin-bottom: 1.5rem;
+  color: #f1f5f9;
+  font-size: 1.02rem;
+}
+
+.prose-justify-sm {
+  font-family: var(--font-text-googlesans);
+  text-align: justify;
+  text-justify: inter-word;
+  line-height: 1.88;
+  letter-spacing: 0.01em;
+  margin-bottom: 1.15rem;
+  color: #e2e8f0;
+  font-size: 0.95rem;
+}
+
+/* ==========================================================================
+   FÓRMULAS EN ROBOTO CON RECUADROS VISTOSOS Y FRACCIONES DE 2 PISOS
+   ========================================================================== */
+.math-showcase-box {
+  font-family: var(--font-formula-roboto);
+  background: linear-gradient(135deg, rgba(15, 23, 55, 0.88) 0%, rgba(28, 25, 68, 0.84) 55%, rgba(12, 32, 62, 0.88) 100%);
+  border-radius: 22px;
+  padding: 1.35rem 1.75rem;
+  margin: 1.5rem auto;
+  max-width: 860px;
+  box-shadow:
+    0 0 28px 4px rgba(56, 189, 248, 0.22),
+    inset 0 0 18px rgba(251, 191, 36, 0.14);
+  border: 1px solid rgba(56, 189, 248, 0.28);
+  text-align: center;
+  color: #ffffff;
+}
+
+.math-expr-row {
+  font-family: var(--font-formula-roboto);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.65rem;
+  font-size: 1.28rem;
+  font-weight: 500;
+  color: #bae6fd;
+  margin: 0.65rem 0;
+  line-height: 1.4;
+}
+
+.math-var {
+  font-family: var(--font-formula-roboto);
+  font-weight: 700;
+  color: #fde68a;
+}
+
+.math-eq {
+  font-family: var(--font-formula-roboto);
+  color: #38bdf8;
+  font-weight: 700;
+  padding: 0 0.25rem;
+}
+
+/* Componente de Fracción Real con Numerador arriba y Denominador abajo */
+.frac {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  vertical-align: middle;
+  margin: 0 0.3rem;
+  font-family: var(--font-formula-roboto);
+}
+
+.frac > .num {
+  padding: 0.08rem 0.5rem 0.18rem 0.5rem;
+  border-bottom: 2px solid #fbbf24;
+  color: #ffffff;
+  font-weight: 600;
+  line-height: 1.2;
+  text-align: center;
+  width: 100%;
+}
+
+.frac > .den {
+  padding: 0.18rem 0.5rem 0.06rem 0.5rem;
+  color: #7dd3fc;
+  font-weight: 600;
+  line-height: 1.2;
+  text-align: center;
+  width: 100%;
+}
+
+.sqrt-wrap {
+  display: inline-flex;
+  align-items: center;
+  vertical-align: middle;
+  font-family: var(--font-formula-roboto);
+}
+
+.sqrt-sign {
+  font-size: 1.55em;
+  color: #fbbf24;
+  line-height: 1;
+  margin-right: 1px;
+}
+
+.sqrt-radicand {
+  border-top: 2px solid #fbbf24;
+  padding-top: 0.15rem;
+  padding-left: 0.25rem;
+  padding-right: 0.25rem;
+}
+
+/* ==========================================================================
+   CAJAS CONTENEDORAS DIFUMINADAS (SIN LÍNEA DURA CON EL ALREDEDOR)
+   ========================================================================== */
 .nebula-blur-box {
   position: relative;
   background: radial-gradient(
     ellipse at center,
-    rgba(15, 23, 52, 0.68) 0%,
-    rgba(12, 18, 42, 0.54) 72%,
-    rgba(10, 15, 35, 0.22) 96%,
-    rgba(10, 15, 35, 0.02) 100%
+    rgba(13, 20, 48, 0.72) 0%,
+    rgba(11, 17, 40, 0.56) 76%,
+    rgba(8, 13, 32, 0.24) 96%,
+    rgba(8, 13, 32, 0.02) 100%
   );
   backdrop-filter: blur(28px) saturate(145%);
   -webkit-backdrop-filter: blur(28px) saturate(145%);
   border: none;
-  border-radius: 28px;
+  border-radius: 30px;
   box-shadow:
-    0 0 42px 18px rgba(10, 16, 38, 0.55),
-    inset 0 0 32px 12px rgba(56, 189, 248, 0.05);
-  text-align: center;
+    0 0 46px 20px rgba(8, 13, 32, 0.58),
+    inset 0 0 32px 10px rgba(56, 189, 248, 0.05);
 }
 
-/* Barra Sticky Superior */
+/* ==========================================================================
+   BARRA STICKY SUPERIOR Y BOTÓN CIRCULAR DEL CAPIBARA
+   ========================================================================== */
 .sticky-cosmic-nav {
   position: sticky;
   top: 0;
-  z-index: 50;
-  background: linear-gradient(180deg, rgba(6, 10, 26, 0.90) 0%, rgba(10, 16, 40, 0.72) 85%, rgba(10, 16, 40, 0.0) 100%);
+  z-index: 60;
+  height: 76px;
+  display: flex;
+  align-items: center;
+  background: linear-gradient(180deg, rgba(5, 8, 22, 0.92) 0%, rgba(10, 16, 40, 0.80) 85%, rgba(10, 16, 40, 0.0) 100%);
   backdrop-filter: blur(22px);
   -webkit-backdrop-filter: blur(22px);
-  border: none;
-  padding: 0.75rem 1rem 1rem 1rem;
+  padding: 0 1rem;
 }
 
-/* Botones estilo Nebulosa Cuántica */
+/* Solo los botones llevan forma circular */
+.capy-circle-btn {
+  width: 52px;
+  height: 52px;
+  border-radius: 9999px;
+  border: 2px solid rgba(251, 191, 36, 0.75);
+  background: radial-gradient(circle at 35% 35%, rgba(245, 158, 11, 0.35), rgba(15, 23, 42, 0.85));
+  box-shadow: 0 0 18px rgba(245, 158, 11, 0.45);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+  padding: 3px;
+}
+
+.capy-circle-btn:hover {
+  transform: scale(1.08) rotate(-4deg);
+  box-shadow: 0 0 26px rgba(56, 189, 248, 0.75);
+  border-color: #38bdf8;
+}
+
+.capy-circle-btn.open {
+  border-color: #38bdf8;
+  background: radial-gradient(circle at 35% 35%, rgba(56, 189, 248, 0.45), rgba(15, 23, 42, 0.9));
+  box-shadow: 0 0 26px rgba(56, 189, 248, 0.75);
+}
+
+/* Imágenes de capibaras e íconos sin fondo ni recuadro (transparentes) */
+.sprite-no-bg {
+  background: transparent !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  border: none !important;
+  filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.45));
+}
+
 .quantum-nav-btn {
   font-family: var(--font-1-bingbong);
-  font-size: 1.08rem;
+  font-size: 1.06rem;
   padding: 0.45rem 1.25rem;
   border-radius: 9999px;
   border: none;
@@ -142,40 +335,118 @@ body {
   box-shadow: 0 0 26px 6px rgba(245, 158, 11, 0.48);
 }
 
-/* Pequeñas barritas insinuantes debajo del video */
+/* ==========================================================================
+   HOJA DE FÓRMULAS LATERAL IZQUIERDA (DEBAJO DE LA BARRA STICKY)
+   ========================================================================== */
+.formula-drawer-left {
+  position: fixed;
+  top: 76px;
+  left: 0;
+  bottom: 0;
+  width: 390px;
+  max-width: 92vw;
+  z-index: 55;
+  background: linear-gradient(165deg, rgba(8, 13, 34, 0.95) 0%, rgba(17, 24, 56, 0.94) 60%, rgba(10, 16, 40, 0.96) 100%);
+  backdrop-filter: blur(26px);
+  -webkit-backdrop-filter: blur(26px);
+  box-shadow: 12px 0 42px rgba(0, 0, 0, 0.75), inset -1px 0 0 rgba(56, 189, 248, 0.3);
+  transform: translateX(-104%);
+  transition: transform 0.34s cubic-bezier(0.22, 1, 0.36, 1);
+  display: flex;
+  flex-direction: column;
+}
+
+.formula-drawer-left.open {
+  transform: translateX(0);
+}
+
+/* ==========================================================================
+   MENÚ Y VENTANA DESPLEGABLE 'ARCHIVOS' (DEBAJO DE LA BARRA STICKY)
+   ========================================================================== */
+.archivos-dropdown-menu {
+  position: absolute;
+  top: 62px;
+  right: 0;
+  width: 310px;
+  background: linear-gradient(165deg, rgba(10, 16, 40, 0.96) 0%, rgba(20, 28, 64, 0.96) 100%);
+  backdrop-filter: blur(24px);
+  border-radius: 22px;
+  padding: 0.75rem;
+  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.75), 0 0 20px rgba(56, 189, 248, 0.25);
+  z-index: 65;
+}
+
+.archivos-viewer-panel {
+  position: fixed;
+  top: 76px;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 54;
+  background: rgba(5, 9, 24, 0.92);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  display: flex;
+  flex-direction: column;
+}
+
+/* ==========================================================================
+   BARRITAS INSINUANTES DEBAJO DEL VIDEO (1 FILA EN U6, 2 FILAS EN U7 Y U8)
+   ========================================================================== */
+.video-bars-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.48rem;
+  padding: 0.75rem 0.4rem 0.2rem 0.4rem;
+  width: 100%;
+}
+
 .video-bars-row {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.5rem;
-  padding: 0.65rem 0.5rem 0.2rem 0.5rem;
+  gap: 0.55rem;
   width: 100%;
 }
 
 .video-bar-pill {
   position: relative;
   flex: 1;
-  max-width: 68px;
-  height: 9px;
+  max-width: 110px;
+  height: 12px;
   border-radius: 9999px;
-  border: none;
-  background: rgba(148, 163, 184, 0.28);
+  background: rgba(148, 163, 184, 0.22);
   cursor: pointer;
   overflow: hidden;
-  transition: height 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+/* Fila 1: Contorno Ámbar/Dorado (Videos de Álvaro Sánchez Jovic / Serie Principal) */
+.video-bar-pill.row-alvaro {
+  border: 1.5px solid rgba(251, 191, 36, 0.65);
+}
+
+/* Fila 2: Contorno Cian/Violeta Cuántico (Videos de Playlists de Cátedra) */
+.video-bar-pill.row-playlist {
+  border: 1.5px solid rgba(56, 189, 248, 0.70);
 }
 
 .video-bar-pill:hover {
-  height: 12px;
-  transform: scaleY(1.12);
-  background: rgba(56, 189, 248, 0.48);
-  box-shadow: 0 0 12px rgba(56, 189, 248, 0.6);
+  transform: scaleY(1.18);
+  background: rgba(56, 189, 248, 0.42);
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.65);
 }
 
-.video-bar-pill.active {
-  height: 12px;
-  background: linear-gradient(90deg, #fbbf24 0%, #f59e0b 55%, #38bdf8 100%);
-  box-shadow: 0 0 16px rgba(251, 191, 36, 0.75);
+.video-bar-pill.active.row-alvaro {
+  background: linear-gradient(90deg, #fbbf24 0%, #f59e0b 70%, #fde68a 100%);
+  border-color: #ffffff;
+  box-shadow: 0 0 16px rgba(251, 191, 36, 0.85);
+}
+
+.video-bar-pill.active.row-playlist {
+  background: linear-gradient(90deg, #38bdf8 0%, #818cf8 65%, #c084fc 100%);
+  border-color: #ffffff;
+  box-shadow: 0 0 16px rgba(56, 189, 248, 0.85);
 }
 
 .video-bar-progress {
@@ -183,33 +454,35 @@ body {
   left: 0;
   top: 0;
   bottom: 0;
-  background: rgba(251, 191, 36, 0.65);
+  background: rgba(255, 255, 255, 0.45);
   border-radius: 9999px;
   pointer-events: none;
 }
 
-/* Barra dinámica de botones 'concepto' */
+/* ==========================================================================
+   BARRA DINÁMICA DE BOTONES DE CONCEPTO Y TARJETAS INTERACTIVAS
+   ========================================================================== */
 .concept-pill-bar {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   justify-content: center;
-  gap: 0.55rem;
-  padding: 0.75rem 1rem;
+  gap: 0.6rem;
+  padding: 0.85rem 1.1rem;
   border-radius: 9999px;
   background: radial-gradient(ellipse at center, rgba(30, 41, 82, 0.65) 0%, rgba(15, 23, 42, 0.25) 95%);
   box-shadow: 0 0 28px 8px rgba(10, 15, 35, 0.45);
-  margin-bottom: 1rem;
+  margin-bottom: 1.5rem;
 }
 
 .concept-btn {
   font-family: var(--font-3-babydoll);
   font-size: 0.96rem;
-  padding: 0.4rem 1.05rem;
+  padding: 0.45rem 1.15rem;
   border-radius: 9999px;
   border: none;
   color: #f1f5f9;
-  background: rgba(15, 23, 42, 0.65);
+  background: rgba(15, 23, 42, 0.68);
   box-shadow: 0 0 12px rgba(56, 189, 248, 0.18);
   cursor: pointer;
   transition: all 0.22s ease;
@@ -235,97 +508,90 @@ body {
   scrollbar-width: thin;
   scrollbar-color: rgba(245, 158, 11, 0.55) rgba(15, 23, 42, 0.3);
 }
-
-.cosmic-scroll::-webkit-scrollbar {
-  width: 7px;
-  height: 7px;
-}
-.cosmic-scroll::-webkit-scrollbar-track {
-  background: rgba(15, 23, 42, 0.25);
-  border-radius: 9999px;
-}
+.cosmic-scroll::-webkit-scrollbar { width: 7px; height: 7px; }
+.cosmic-scroll::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.25); border-radius: 9999px; }
 .cosmic-scroll::-webkit-scrollbar-thumb {
   background: linear-gradient(180deg, rgba(245, 158, 11, 0.7), rgba(56, 189, 248, 0.7));
   border-radius: 9999px;
 }
 
-/* Animaciones suaves para Capibaras e Íconos de Ciencia */
 @keyframes floatCapy {
   0%, 100% { transform: translateY(0px) rotate(0deg); }
   50% { transform: translateY(-7px) rotate(2deg); }
 }
 
 @keyframes pulseQuantum {
-  0%, 100% { transform: scale(1); filter: drop-shadow(0 0 8px rgba(56, 189, 248, 0.45)); }
-  50% { transform: scale(1.07); filter: drop-shadow(0 0 16px rgba(251, 191, 36, 0.75)); }
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.07); }
 }
 
-@keyframes orbitBadge {
-  0%, 100% { transform: translateX(0px) translateY(0px); }
-  25% { transform: translateX(4px) translateY(-4px); }
-  50% { transform: translateX(0px) translateY(-7px); }
-  75% { transform: translateX(-4px) translateY(-4px); }
-}
-
-.anim-capy {
-  animation: floatCapy 3.8s ease-in-out infinite;
-  border-radius: 18px;
-  box-shadow: 0 0 22px rgba(245, 158, 11, 0.28);
-}
-
-.anim-sci-icon {
-  animation: pulseQuantum 3.2s ease-in-out infinite;
-  border-radius: 14px;
-}
-
-.anim-orbit {
-  animation: orbitBadge 4.2s ease-in-out infinite;
-}
-
-/* Bloques de fórmulas, despejes y trampas de examen centrados */
-.formula-nebula-card {
-  font-family: var(--font-4-jojoba);
-  background: radial-gradient(ellipse at center, rgba(30, 41, 82, 0.72) 0%, rgba(15, 23, 42, 0.38) 92%);
-  border-radius: 22px;
-  padding: 1.1rem 1.25rem;
-  margin: 0.85rem auto;
-  max-width: 860px;
-  box-shadow: 0 0 26px 6px rgba(56, 189, 248, 0.14);
-  text-align: center;
-}
+.anim-capy { animation: floatCapy 3.8s ease-in-out infinite; }
+.anim-sci-icon { animation: pulseQuantum 3.2s ease-in-out infinite; }
 
 .trap-nebula-card {
-  font-family: var(--font-4-jojoba);
-  background: radial-gradient(ellipse at center, rgba(120, 53, 15, 0.68) 0%, rgba(69, 26, 3, 0.35) 95%);
-  border-radius: 22px;
-  padding: 1rem 1.25rem;
-  margin: 0.85rem auto;
-  max-width: 840px;
-  box-shadow: 0 0 24px 6px rgba(245, 158, 11, 0.22);
+  background: radial-gradient(ellipse at center, rgba(120, 53, 15, 0.62) 0%, rgba(69, 26, 3, 0.32) 95%);
+  border-radius: 24px;
+  padding: 1.35rem 1.65rem;
+  margin: 1.5rem auto;
+  max-width: 860px;
+  box-shadow: 0 0 26px 6px rgba(245, 158, 11, 0.20);
   color: #fef3c7;
-  text-align: center;
+}
+
+.sim-param-box {
+  background: radial-gradient(ellipse at center, rgba(17, 28, 68, 0.80) 0%, rgba(10, 16, 40, 0.58) 96%);
+  border-radius: 26px;
+  padding: 1.35rem 1.6rem;
+  margin: 1.6rem auto;
+  max-width: 860px;
+  box-shadow: 0 0 30px 6px rgba(56, 189, 248, 0.16), inset 0 0 20px rgba(168, 85, 247, 0.12);
 }
 
 .result-highlight-box {
+  font-family: var(--font-formula-roboto);
   display: inline-block;
-  padding: 0.7rem 1.4rem;
-  border-radius: 18px;
-  background: linear-gradient(135deg, rgba(16, 185, 129, 0.28) 0%, rgba(56, 189, 248, 0.28) 100%);
-  box-shadow: 0 0 22px 4px rgba(16, 185, 129, 0.35);
+  padding: 0.9rem 1.6rem;
+  border-radius: 20px;
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.30) 0%, rgba(56, 189, 248, 0.30) 100%);
+  box-shadow: 0 0 24px 4px rgba(16, 185, 129, 0.35);
+  border: 1px solid rgba(52, 211, 153, 0.45);
   color: #ecfdf5;
   font-weight: 700;
-  margin: 0.65rem auto;
+  margin: 1rem auto;
+  text-align: center;
 }
 
 .pdf-ref-footer {
   font-family: var(--font-3-babydoll);
   background: radial-gradient(ellipse at center, rgba(56, 189, 248, 0.22) 0%, rgba(15, 23, 42, 0.4) 95%);
   border-radius: 9999px;
-  padding: 0.55rem 1.25rem;
-  margin: 1rem auto 0.25rem auto;
+  padding: 0.65rem 1.4rem;
+  margin: 1.4rem auto 0.4rem auto;
   display: inline-flex;
   flex-wrap: wrap;
   align-items: center;
   justify-content: center;
-  gap: 0.6rem;
+  gap: 0.7rem;
+}
+
+input[type="range"].quantum-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 7px;
+  border-radius: 9999px;
+  background: linear-gradient(90deg, #38bdf8 0%, #f59e0b 100%);
+  outline: none;
+}
+
+input[type="range"].quantum-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 3px solid #f59e0b;
+  cursor: pointer;
+  box-shadow: 0 0 10px rgba(245, 158, 11, 0.85);
 }
