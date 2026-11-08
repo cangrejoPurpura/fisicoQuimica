@@ -3,9 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Física y Química — Unidades 6, 7 y 8</title>
+  <title>Física y Química — Unidades 6, 7 y 8 (UNAJ 2025)</title>
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
   <script src="https://www.youtube.com/iframe_api"></script>
+  <!-- Lector externo PDF.js para renderizado vectorial nítido de los PDFs originales -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body class="min-h-screen flex flex-col">
@@ -17,27 +19,31 @@
   </div>
   <canvas id="starfieldCanvas" aria-hidden="true"></canvas>
 
-  <!-- BARRA SUPERIOR STICKY -->
-  <nav class="sticky-cosmic-nav">
-    <div class="max-w-7xl w-full mx-auto flex items-center justify-between gap-2 md:gap-4">
+  <!-- BARRA SUPERIOR STICKY PRINCIPAL -->
+  <nav class="sticky-cosmic-nav" aria-label="Navegación Principal">
+    <div class="max-w-[1600px] w-full mx-auto flex items-center justify-between gap-2 md:gap-4 px-1 md:px-3">
 
-      <!-- Izquierda: Botón Circular del Capibara con Banana (Despliega/Repliega Hoja de Fórmulas Lateral) -->
+      <!-- Izquierda: Botón Circular del Capibara con Banana (Despliega/Repliega Hoja de Fórmulas Lateral y empuja el contenido) -->
       <div class="flex items-center gap-2.5">
         <button
           id="btnFormulaDrawerToggle"
           type="button"
           onclick="toggleFormulaDrawer()"
           class="capy-circle-btn"
-          title="Abrir / Cerrar Hoja de Fórmulas">
-          <img id="capyFormulaToggleImg" src="assets/capy_banana.webp" alt="Hoja de Fórmulas" class="w-10 h-10 object-contain sprite-no-bg">
+          title="Abrir / Cerrar Hoja de Fórmulas (Esc para cerrar)">
+          <img id="capyFormulaToggleImg" src="assets/capy_banana.webp" alt="Hoja de Fórmulas" class="w-11 h-11 object-contain sprite-no-bg">
         </button>
-        <span id="formulaDrawerHint" onclick="toggleFormulaDrawer()" class="hidden sm:inline-block text-xs text-amber-300 font-tier-3 cursor-pointer hover:text-white transition">
+        <button
+          id="formulaDrawerHint"
+          type="button"
+          onclick="toggleFormulaDrawer()"
+          class="patrick-pill-label text-amber-300 hover:text-white transition cursor-pointer">
           Fórmulas
-        </span>
+        </button>
       </div>
 
-      <!-- Centro: Unidades, Ejercicios y Parcial -->
-      <div class="flex flex-wrap items-center justify-center gap-2 md:gap-3.5">
+      <!-- Centro: Unidades, Ejercicios y Parcial (En fuente Patrick Hand más grande) -->
+      <div class="flex flex-wrap items-center justify-center gap-2 md:gap-3">
         <button id="navBtnU6" type="button" onclick="switchTopNav('u6')" class="quantum-nav-btn active">Unidad 6</button>
         <button id="navBtnU7" type="button" onclick="switchTopNav('u7')" class="quantum-nav-btn">Unidad 7</button>
         <button id="navBtnU8" type="button" onclick="switchTopNav('u8')" class="quantum-nav-btn">Unidad 8</button>
@@ -45,161 +51,242 @@
         <button id="navBtnParcial" type="button" onclick="switchTopNav('parcial')" class="quantum-nav-btn">Parcial</button>
       </div>
 
-      <!-- Derecha: Botón Desplegable 'Archivos' -->
-      <div class="relative">
-        <button
-          id="navBtnArchivos"
-          type="button"
-          onclick="toggleArchivosMenu()"
-          class="quantum-nav-btn flex items-center gap-1.5">
-          <span>Archivos</span>
-          <span id="archivosCaret" class="text-xs transition-transform">▾</span>
-        </button>
+      <!-- Derecha: Botón 'Archivos' + Nuevo Botón Lateral 'Calculadora' con su Capibara Científico Nuevo -->
+      <div class="flex items-center gap-2.5 md:gap-3.5">
 
-        <!-- Menú hacia abajo con los archivos originales -->
-        <div id="archivosDropdownMenu" class="archivos-dropdown-menu hidden text-left space-y-2">
-          <div class="text-xs text-amber-300 font-tier-3 px-2 py-0.5 uppercase tracking-wider">
-            PDFs de Unidades (Formato Original)
-          </div>
-          <div class="grid grid-cols-3 gap-1.5 px-1">
-            <button type="button" onclick="openOriginalFileViewer('u6', 1)" class="px-2.5 py-1.5 rounded-xl bg-slate-900/80 hover:bg-amber-500 hover:text-slate-950 text-xs font-bold text-slate-100 font-tier-3 transition text-center">
-              Unidad 6
-            </button>
-            <button type="button" onclick="openOriginalFileViewer('u7', 1)" class="px-2.5 py-1.5 rounded-xl bg-slate-900/80 hover:bg-amber-500 hover:text-slate-950 text-xs font-bold text-slate-100 font-tier-3 transition text-center">
-              Unidad 7
-            </button>
-            <button type="button" onclick="openOriginalFileViewer('u8', 1)" class="px-2.5 py-1.5 rounded-xl bg-slate-900/80 hover:bg-amber-500 hover:text-slate-950 text-xs font-bold text-slate-100 font-tier-3 transition text-center">
-              Unidad 8 / 9
-            </button>
-          </div>
-
-          <div class="border-t border-slate-700/60 my-1.5"></div>
-
-          <button type="button" onclick="openOriginalFileViewer('carpeta', 1)" class="w-full px-3 py-2 rounded-xl bg-slate-900/75 hover:bg-cyan-500/30 text-left text-sm text-slate-100 font-tier-3 flex items-center justify-between transition">
-            <span>📒 Carpeta (22 hojas cuadernillo)</span>
-            <span class="text-[11px] text-cyan-300">Ver</span>
+        <!-- Menú Desplegable 'Archivos' -->
+        <div class="relative">
+          <button
+            id="navBtnArchivos"
+            type="button"
+            onclick="toggleArchivosMenu()"
+            class="quantum-nav-btn flex items-center gap-1.5">
+            <span>Archivos</span>
+            <span id="archivosCaret" class="text-sm transition-transform">▾</span>
           </button>
 
-          <button type="button" onclick="openOriginalFileViewer('simulacro', 1)" class="w-full px-3 py-2 rounded-xl bg-slate-900/75 hover:bg-cyan-500/30 text-left text-sm text-slate-100 font-tier-3 flex items-center justify-between transition">
-            <span>📝 Simulacro de Parcial</span>
-            <span class="text-[11px] text-cyan-300">Ver</span>
-          </button>
+          <!-- Menú hacia abajo con los archivos originales en HD -->
+          <div id="archivosDropdownMenu" class="archivos-dropdown-menu hidden text-left space-y-2.5">
+            <div class="flex items-center justify-between px-2 py-0.5">
+              <span class="text-sm text-amber-300 font-patrick tracking-wide uppercase">
+                PDFs Oficiales Nítidos (Vista 50/50)
+              </span>
+              <span class="text-[11px] text-slate-400 font-patrick">[Esc cierra]</span>
+            </div>
+            <div class="grid grid-cols-3 gap-1.5 px-1">
+              <button type="button" onclick="openOriginalFileViewer('u6', 1)" class="px-2.5 py-2 rounded-xl bg-slate-900/85 hover:bg-amber-400 hover:text-slate-950 text-base font-bold text-slate-100 font-patrick transition text-center">
+                Unidad 6
+              </button>
+              <button type="button" onclick="openOriginalFileViewer('u7', 1)" class="px-2.5 py-2 rounded-xl bg-slate-900/85 hover:bg-amber-400 hover:text-slate-950 text-base font-bold text-slate-100 font-patrick transition text-center">
+                Unidad 7
+              </button>
+              <button type="button" onclick="openOriginalFileViewer('u8', 1)" class="px-2.5 py-2 rounded-xl bg-slate-900/85 hover:bg-amber-400 hover:text-slate-950 text-base font-bold text-slate-100 font-patrick transition text-center">
+                Unidad 8
+              </button>
+            </div>
 
-          <button type="button" onclick="openOriginalFileViewer('estructura', 1)" class="w-full px-3 py-2 rounded-xl bg-slate-900/75 hover:bg-cyan-500/30 text-left text-sm text-slate-100 font-tier-3 flex items-center justify-between transition">
-            <span>📋 Estructura de Parcial</span>
-            <span class="text-[11px] text-cyan-300">Ver</span>
+            <div class="border-t border-slate-700/60 my-1.5"></div>
+
+            <button type="button" onclick="openOriginalFileViewer('carpeta', 1)" class="w-full px-3 py-2 rounded-xl bg-slate-900/80 hover:bg-cyan-500/30 text-left text-base text-slate-100 font-patrick flex items-center justify-between transition">
+              <span>📒 Carpeta Completa (22 hojas HD)</span>
+              <span class="text-xs text-cyan-300 font-bold">Abrir 50/50</span>
+            </button>
+
+            <button type="button" onclick="openOriginalFileViewer('simulacro', 1)" class="w-full px-3 py-2 rounded-xl bg-slate-900/80 hover:bg-cyan-500/30 text-left text-base text-slate-100 font-patrick flex items-center justify-between transition">
+              <span>📝 Modelo de Parcial y Guía Word</span>
+              <span class="text-xs text-cyan-300 font-bold">Abrir 50/50</span>
+            </button>
+
+            <button type="button" onclick="openOriginalFileViewer('estructura', 1)" class="w-full px-3 py-2 rounded-xl bg-slate-900/80 hover:bg-cyan-500/30 text-left text-base text-slate-100 font-patrick flex items-center justify-between transition">
+              <span>📋 Estructura de 2° Parcial 2025</span>
+              <span class="text-xs text-cyan-300 font-bold">Abrir 50/50</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Nuevo Botón 'Calculadora' + Nuevo Ícono de Capibara con Calculadora -->
+        <div class="flex items-center gap-2">
+          <button
+            id="btnCalculatorHint"
+            type="button"
+            onclick="toggleCalculatorDrawer()"
+            class="quantum-nav-btn !px-3.5 !py-1.5 flex items-center gap-1.5"
+            title="Abrir / Cerrar Calculadora de Dato Faltante (Esc para cerrar)">
+            <span>Calculadora</span>
+          </button>
+          <button
+            id="btnCalculatorDrawerToggle"
+            type="button"
+            onclick="toggleCalculatorDrawer()"
+            class="capy-circle-btn calc-capy-btn"
+            title="Abrir / Cerrar Calculadora Científica de Fórmulas (Esc para cerrar)">
+            <img id="capyCalculatorToggleImg" src="assets/capy_calc.webp" alt="Calculadora" class="w-11 h-11 object-contain sprite-no-bg">
           </button>
         </div>
+
       </div>
 
     </div>
   </nav>
 
-  <!-- HOJA DE FÓRMULAS LATERAL IZQUIERDA (SE DESPLIEGA CON EL CAPIBARA CON BANANA) -->
+  <!-- BARRA SECUNDARIA STICKY DEL VISOR DE ARCHIVOS (ESTILO IMAGEN b35eba CON FUENTE PATRICK HAND MÁS GRANDE) -->
+  <div id="archivosStickyToolbar" class="archivos-sticky-toolbar hidden">
+    <div class="max-w-[1600px] w-full mx-auto px-3 md:px-5 py-2 flex flex-wrap items-center justify-between gap-2.5 app-push-container">
+      <div class="flex items-center gap-2.5">
+        <img src="assets/capy_study.webp" alt="Archivos" class="w-10 h-10 object-contain sprite-no-bg">
+        <h3 id="archivosViewerTitle" class="text-lg md:text-2xl font-bold text-amber-300 font-patrick tracking-wide">
+          PDF Original — Unidad 6 (Electricidad y Bioelectricidad - 14 páginas)
+        </h3>
+      </div>
+
+      <div class="flex flex-wrap items-center gap-2">
+        <button type="button" id="pillFile_u6" onclick="openOriginalFileViewer('u6', 1)" class="archivos-pill-btn">PDF U6</button>
+        <button type="button" id="pillFile_u7" onclick="openOriginalFileViewer('u7', 1)" class="archivos-pill-btn">PDF U7</button>
+        <button type="button" id="pillFile_u8" onclick="openOriginalFileViewer('u8', 1)" class="archivos-pill-btn">PDF U8</button>
+        <button type="button" id="pillFile_carpeta" onclick="openOriginalFileViewer('carpeta', 1)" class="archivos-pill-btn">Carpeta</button>
+        <button type="button" id="pillFile_simulacro" onclick="openOriginalFileViewer('simulacro', 1)" class="archivos-pill-btn">Simulacro</button>
+        <button type="button" id="pillFile_estructura" onclick="openOriginalFileViewer('estructura', 1)" class="archivos-pill-btn">Estructura</button>
+
+        <select id="archivosPageJumpSelect" onchange="scrollToOriginalPage(this.value)" class="archivos-select-pill" aria-label="Seleccionar página"></select>
+
+        <!-- Controles de Zoom Nítido -->
+        <div class="flex items-center gap-1 bg-slate-900/90 border border-slate-700/80 rounded-full px-2 py-0.5">
+          <button type="button" onclick="adjustFileZoom(-0.2)" class="px-2 text-base font-bold text-cyan-300 hover:text-white font-patrick" title="Alejar Zoom">−</button>
+          <span id="archivosZoomReadout" class="text-sm font-bold text-amber-200 font-patrick min-w-[44px] text-center">100%</span>
+          <button type="button" onclick="adjustFileZoom(0.2)" class="px-2 text-base font-bold text-cyan-300 hover:text-white font-patrick" title="Acercar Zoom HD">+</button>
+          <button type="button" onclick="resetFileZoom()" class="px-2 text-xs text-slate-300 hover:text-amber-300 font-patrick" title="Ajustar al ancho">Ajustar</button>
+        </div>
+
+        <button type="button" id="btnToggleSplitMode" onclick="toggleFileFullOrSplit()" class="archivos-pill-btn !bg-cyan-500/25 !text-cyan-200 hover:!bg-cyan-400 hover:!text-slate-950" title="Alternar entre Vista Dividida 50/50 y Pantalla Completa">
+          ◫ Vista 50/50
+        </button>
+
+        <button type="button" onclick="closeOriginalFileViewer()" class="archivos-close-pill" title="Cerrar archivo y volver (Tecla Esc)">
+          ✕ Volver al Estudio
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- HOJA DE FÓRMULAS LATERAL IZQUIERDA (EMPUJA TODO EL CONTENIDO HACIA LA DERECHA PARA NO TAPARLO) -->
   <aside id="formulaDrawerLeft" class="formula-drawer-left" aria-label="Hoja de Fórmulas Espacial">
     <div class="p-4 border-b border-slate-800/80 flex items-center justify-between gap-2">
       <div class="flex items-center gap-2.5">
-        <img src="assets/capy_labcoat.webp" alt="Capibara Científico" class="w-11 h-11 object-contain sprite-no-bg">
+        <img src="assets/capy_labcoat.webp" alt="Capibara Científico" class="w-12 h-12 object-contain sprite-no-bg">
         <div class="text-left">
-          <h2 class="text-lg font-bold text-amber-300 font-tier-2 leading-tight">Hoja de Fórmulas</h2>
-          <p class="text-xs text-cyan-200 font-tier-3">Unidades 6, 7 y 8 • Sistema Internacional</p>
+          <h2 class="text-xl font-bold text-amber-300 font-patrick leading-tight">Hoja de Fórmulas</h2>
+          <p class="text-xs text-cyan-200 font-patrick">Unidades 6, 7 y 8 • Sistema Internacional (Esc cierra)</p>
         </div>
       </div>
-      <button type="button" onclick="toggleFormulaDrawer()" class="px-3 py-1 rounded-full bg-slate-800 hover:bg-amber-500 text-slate-200 hover:text-slate-950 text-xs font-bold font-tier-3 transition">
+      <button type="button" onclick="toggleFormulaDrawer()" class="px-3.5 py-1 rounded-full bg-slate-800 hover:bg-amber-500 text-slate-200 hover:text-slate-950 text-sm font-bold font-patrick transition">
         ✕ Cerrar
       </button>
     </div>
 
     <!-- Filtro rápido por unidad dentro de la hoja de fórmulas -->
     <div class="px-4 py-2.5 flex items-center justify-center gap-2 border-b border-slate-800/60">
-      <button id="fTab_u6" type="button" onclick="renderFormulaSheet('u6')" class="px-3 py-1 rounded-full text-xs font-bold bg-amber-400 text-slate-950 font-tier-3">Unidad 6</button>
-      <button id="fTab_u7" type="button" onclick="renderFormulaSheet('u7')" class="px-3 py-1 rounded-full text-xs font-bold bg-slate-800 text-slate-200 font-tier-3">Unidad 7</button>
-      <button id="fTab_u8" type="button" onclick="renderFormulaSheet('u8')" class="px-3 py-1 rounded-full text-xs font-bold bg-slate-800 text-slate-200 font-tier-3">Unidad 8</button>
+      <button id="fTab_u6" type="button" onclick="renderFormulaSheet('u6')" class="px-3.5 py-1 rounded-full text-sm font-bold bg-amber-400 text-slate-950 font-patrick">Unidad 6</button>
+      <button id="fTab_u7" type="button" onclick="renderFormulaSheet('u7')" class="px-3.5 py-1 rounded-full text-sm font-bold bg-slate-800 text-slate-200 font-patrick">Unidad 7</button>
+      <button id="fTab_u8" type="button" onclick="renderFormulaSheet('u8')" class="px-3.5 py-1 rounded-full text-sm font-bold bg-slate-800 text-slate-200 font-patrick">Unidad 8</button>
     </div>
 
     <div id="formulaDrawerContent" class="flex-1 cosmic-scroll p-4 space-y-4"></div>
   </aside>
 
-  <!-- VENTANA VISOR DE ARCHIVOS EN FORMATO ORIGINAL SCROLLEABLE (NO TAPA LA BARRA STICKY) -->
-  <section id="archivosViewerPanel" class="archivos-viewer-panel hidden">
-    <div class="max-w-6xl w-full mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-2 border-b border-slate-800/80">
-      <div class="flex items-center gap-2.5 flex-wrap">
-        <img src="assets/capy_study.webp" alt="Archivos" class="w-10 h-10 object-contain sprite-no-bg">
-        <h3 id="archivosViewerTitle" class="text-base md:text-lg font-bold text-amber-300 font-tier-2">Archivo Original</h3>
+  <!-- NUEVA VENTANA LATERAL DERECHA: 'CALCULADORA' DE DATO FALTANTE (MISMO DISEÑO QUE LA HOJA DE FÓRMULAS) -->
+  <aside id="calculatorDrawerRight" class="calculator-drawer-right" aria-label="Calculadora Científica de Fórmulas">
+    <div class="p-4 border-b border-slate-800/80 flex items-center justify-between gap-2">
+      <div class="flex items-center gap-2.5">
+        <img id="calcHeaderCapyImg" src="assets/capy_calc_open.webp" alt="Capibara Calculadora" class="w-12 h-12 object-contain sprite-no-bg">
+        <div class="text-left">
+          <h2 class="text-xl font-bold text-amber-300 font-patrick leading-tight">Calculadora de Fórmulas</h2>
+          <p class="text-xs text-cyan-200 font-patrick">Deja vacío el dato faltante y presiona Calcular (Esc cierra)</p>
+        </div>
       </div>
-
-      <div class="flex flex-wrap items-center gap-2">
-        <button type="button" onclick="openOriginalFileViewer('u6', 1)" class="px-2.5 py-1 rounded-full text-xs font-tier-3 bg-slate-800 hover:bg-amber-400 hover:text-slate-950 text-slate-200 transition">PDF U6</button>
-        <button type="button" onclick="openOriginalFileViewer('u7', 1)" class="px-2.5 py-1 rounded-full text-xs font-tier-3 bg-slate-800 hover:bg-amber-400 hover:text-slate-950 text-slate-200 transition">PDF U7</button>
-        <button type="button" onclick="openOriginalFileViewer('u8', 1)" class="px-2.5 py-1 rounded-full text-xs font-tier-3 bg-slate-800 hover:bg-amber-400 hover:text-slate-950 text-slate-200 transition">PDF U8</button>
-        <button type="button" onclick="openOriginalFileViewer('carpeta', 1)" class="px-2.5 py-1 rounded-full text-xs font-tier-3 bg-slate-800 hover:bg-cyan-400 hover:text-slate-950 text-slate-200 transition">Carpeta</button>
-        <button type="button" onclick="openOriginalFileViewer('simulacro', 1)" class="px-2.5 py-1 rounded-full text-xs font-tier-3 bg-slate-800 hover:bg-cyan-400 hover:text-slate-950 text-slate-200 transition">Simulacro</button>
-        <button type="button" onclick="openOriginalFileViewer('estructura', 1)" class="px-2.5 py-1 rounded-full text-xs font-tier-3 bg-slate-800 hover:bg-cyan-400 hover:text-slate-950 text-slate-200 transition">Estructura</button>
-        <select id="archivosPageJumpSelect" onchange="scrollToOriginalPage(this.value)" class="bg-slate-900 text-cyan-200 text-xs font-bold rounded-full px-3 py-1 font-tier-3"></select>
-        <button type="button" onclick="closeOriginalFileViewer()" class="px-3.5 py-1 rounded-full text-xs font-bold bg-amber-500 hover:bg-amber-400 text-slate-950 font-tier-3">
-          ✕ Volver al Estudio
-        </button>
-      </div>
+      <button type="button" onclick="toggleCalculatorDrawer()" class="px-3.5 py-1 rounded-full bg-slate-800 hover:bg-amber-500 text-slate-200 hover:text-slate-950 text-sm font-bold font-patrick transition">
+        ✕ Cerrar
+      </button>
     </div>
 
-    <div id="archivosPagesScrollContainer" class="flex-1 cosmic-scroll p-4 md:p-6 space-y-6"></div>
-  </section>
+    <!-- Filtro rápido por unidad dentro de la calculadora -->
+    <div class="px-4 py-2.5 flex items-center justify-center gap-2 border-b border-slate-800/60">
+      <button id="cTab_u6" type="button" onclick="renderCalculatorSheet('u6')" class="px-3.5 py-1 rounded-full text-sm font-bold bg-amber-400 text-slate-950 font-patrick">⚡ Unidad 6</button>
+      <button id="cTab_u7" type="button" onclick="renderCalculatorSheet('u7')" class="px-3.5 py-1 rounded-full text-sm font-bold bg-slate-800 text-slate-200 font-patrick">🧪 Unidad 7</button>
+      <button id="cTab_u8" type="button" onclick="renderCalculatorSheet('u8')" class="px-3.5 py-1 rounded-full text-sm font-bold bg-slate-800 text-slate-200 font-patrick">🫀 Unidad 8</button>
+    </div>
 
-  <!-- CONTENEDOR PRINCIPAL -->
-  <main class="max-w-7xl w-full mx-auto px-3 md:px-6 py-5 space-y-8 flex-1">
+    <div id="calculatorDrawerContent" class="flex-1 cosmic-scroll p-4 space-y-4"></div>
+  </aside>
 
-    <!-- FILA SUPERIOR: 2 CAJAS LADO A LADO -->
-    <section id="topVideoSection" class="grid grid-cols-1 lg:grid-cols-12 gap-7 items-stretch">
+  <!-- CONTENEDOR PRINCIPAL QUE SE EMPUJA AL ABRIR FÓRMULAS/CALCULADORA Y SE DIVIDE 50/50 AL ABRIR ARCHIVOS -->
+  <div id="mainWorkspaceWrapper" class="app-push-container max-w-[1600px] w-full mx-auto px-3 md:px-6 py-5 flex-1">
 
-      <!-- CAJA SUPERIOR IZQUIERDA: SOLO EL VIDEO Y ABAJO LAS BARRITAS SEPARADAS -->
-      <div class="lg:col-span-6 nebula-blur-box p-4 md:p-6 flex flex-col justify-between">
-        <div class="w-full flex-1 flex flex-col justify-center">
-          <div class="relative w-full aspect-video rounded-2xl overflow-hidden shadow-2xl bg-black/85">
-            <iframe
-              id="unitVideoIframe"
-              class="w-full h-full"
-              src="https://www.youtube-nocookie.com/embed/qlwjNDi5ras?enablejsapi=1&rel=0"
-              title="Reproductor de Videos por Unidad"
-              frameborder="0"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-              allowfullscreen>
-            </iframe>
+    <div id="splitScreenGrid" class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+
+      <!-- MITAD IZQUIERDA (100% EN MODO NORMAL; 50% IZQUIERDA EN MODO DIVIDIDO CON ARCHIVO ABIERTO) -->
+      <main id="leftStudyColumn" class="lg:col-span-12 space-y-8">
+
+        <!-- FILA SUPERIOR: EN MODO NORMAL SON 2 CAJAS LADO A LADO; EN MODO DIVIDIDO 50/50 SE APILAN (VIDEO ARRIBA + INFO DEL VIDEO DEBAJO, COMO EN IMAGEN b35f94) -->
+        <section id="topVideoSection" class="grid grid-cols-1 lg:grid-cols-12 gap-7 items-stretch">
+
+          <!-- CAJA DEL REPRODUCTOR DE VIDEO + BARRAS DE VIDEOS ORDENADAS POR LETRA Y NÚMERO -->
+          <div id="videoPlayerCardCol" class="lg:col-span-6 nebula-blur-box p-4 md:p-6 flex flex-col justify-between">
+            <div class="w-full flex-1 flex flex-col justify-center">
+              <div class="relative w-full aspect-video rounded-2xl overflow-hidden shadow-2xl bg-black/90">
+                <iframe
+                  id="unitVideoIframe"
+                  class="w-full h-full"
+                  src="https://www.youtube-nocookie.com/embed/qlwjNDi5ras?enablejsapi=1&rel=0"
+                  title="Reproductor de Videos por Unidad"
+                  frameborder="0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  allowfullscreen>
+                </iframe>
+              </div>
+            </div>
+            <!-- Barritas debajo del video (ordenadas por letra y número: A1..C1 en U6; A1..C2 + Álvaro en U7; A1..E3 en una misma barra + Álvaro en U8) -->
+            <div id="videoBarsContainer" class="video-bars-stack" aria-label="Navegación entre videos"></div>
           </div>
-        </div>
-        <!-- Barritas insinuantes debajo del video (1 fila en U6, 2 filas diferenciadas por contorno en U7 y U8) -->
-        <div id="videoBarsContainer" class="video-bars-stack" aria-label="Navegación entre videos"></div>
-      </div>
 
-      <!-- CAJA SUPERIOR DERECHA: NOMBRE DEL VIDEO + CONCEPTOS PRINCIPALES DEL VIDEO (SCROLLEABLE) -->
-      <div class="lg:col-span-6 nebula-blur-box p-5 md:p-7 flex flex-col max-h-[460px]">
-        <div id="videoBoxTitle" class="pb-3 mb-2"></div>
-        <div id="videoBoxConceptsContent" class="flex-1 cosmic-scroll px-3"></div>
-      </div>
+          <!-- CAJA CON LA INFORMACIÓN DE LO QUE TRATA EL VIDEO (EN MODO DIVIDIDO VA JUSTO DEBAJO DEL VIDEO EN LA MITAD IZQUIERDA) -->
+          <div id="videoInfoCardCol" class="lg:col-span-6 nebula-blur-box p-5 md:p-6 flex flex-col max-h-[520px]">
+            <div id="videoBoxTitle" class="pb-3 mb-2"></div>
+            <div id="videoBoxConceptsContent" class="flex-1 cosmic-scroll px-2 md:px-3"></div>
+          </div>
 
-    </section>
+        </section>
 
-    <!-- FILA CENTRAL: BARRA DINÁMICA DE BOTONES DE CONCEPTO + DESARROLLO DE INFORMACIÓN (SCROLLEABLE) -->
-    <section id="middleConceptSection" class="nebula-blur-box p-5 md:p-8">
-      <div id="dynamicConceptPillsBar" class="concept-pill-bar"></div>
-      <div id="unitDevelopmentContainer" class="max-h-[760px] cosmic-scroll px-3 md:px-7 py-3"></div>
-    </section>
+        <!-- FILA CENTRAL: BARRA DINÁMICA DE BOTONES DE CONCEPTO + DESARROLLO DE INFORMACIÓN (SCROLLEABLE) -->
+        <section id="middleConceptSection" class="nebula-blur-box p-5 md:p-8">
+          <div id="dynamicConceptPillsBar" class="concept-pill-bar"></div>
+          <div id="unitDevelopmentContainer" class="max-h-[760px] cosmic-scroll px-3 md:px-7 py-3"></div>
+        </section>
 
-    <!-- FILA INFERIOR: 2 CAJAS SCROLLEABLES LADO A LADO (EJERCICIOS | RESOLUCIONES DE EJERCICIOS) -->
-    <section id="bottomExercisesSection" class="grid grid-cols-1 lg:grid-cols-12 gap-7 items-stretch pb-10">
+        <!-- FILA INFERIOR: 2 CAJAS SCROLLEABLES LADO A LADO (TODOS LOS EJERCICIOS | RESOLUCIONES PASO A PASO) -->
+        <section id="bottomExercisesSection" class="grid grid-cols-1 lg:grid-cols-12 gap-7 items-stretch pb-10">
 
-      <!-- CAJA INFERIOR IZQUIERDA: EJERCICIOS (SCROLLEABLE) -->
-      <div class="lg:col-span-6 nebula-blur-box p-5 md:p-7 flex flex-col max-h-[760px]">
-        <div id="bottomLeftExercisesBox" class="flex-1 cosmic-scroll px-3"></div>
-      </div>
+          <!-- CAJA INFERIOR IZQUIERDA: EJERCICIOS (WORD, PDF, PARCIAL, CARPETA Y VIDEOS DE ÁLVARO Y CÁTEDRA) -->
+          <div class="lg:col-span-6 nebula-blur-box p-5 md:p-7 flex flex-col max-h-[840px]">
+            <div id="bottomLeftExercisesBox" class="flex-1 cosmic-scroll px-2 md:px-3"></div>
+          </div>
 
-      <!-- CAJA INFERIOR DERECHA: RESOLUCIONES DE EJERCICIOS (SCROLLEABLE) -->
-      <div class="lg:col-span-6 nebula-blur-box p-5 md:p-7 flex flex-col max-h-[760px]">
-        <div id="bottomRightResolutionsBox" class="flex-1 cosmic-scroll px-3"></div>
-      </div>
+          <!-- CAJA INFERIOR DERECHA: RESOLUCIONES DE EJERCICIOS (SCROLLEABLE) -->
+          <div class="lg:col-span-6 nebula-blur-box p-5 md:p-7 flex flex-col max-h-[840px]">
+            <div id="bottomRightResolutionsBox" class="flex-1 cosmic-scroll px-2 md:px-3"></div>
+          </div>
 
-    </section>
+        </section>
 
-  </main>
+      </main>
+
+      <!-- MITAD DERECHA (50% DERECHA EN MODO DIVIDIDO b35f94): VISOR DE ARCHIVOS VECTORIAL PDF.JS + HD -->
+      <aside id="archivosViewerPanel" class="hidden lg:col-span-6 archivos-split-right-pane">
+        <div id="archivosPagesScrollContainer" class="flex-1 cosmic-scroll p-3 md:p-5 space-y-6"></div>
+      </aside>
+
+    </div>
+
+  </div>
 
   <script src="app.js"></script>
 </body>
