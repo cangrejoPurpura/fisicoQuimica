@@ -570,12 +570,14 @@ function solveMissingDatum(cardId) {
 }
 
 // ============================================================================
-// 3. VISOR DE ARCHIVOS VECTORIAL PDF.JS + HD Y MODO PANTALLA DIVIDIDA 50/50 (b35f94)
+// 3. VISOR DE ARCHIVOS VECTORIAL PDF.JS + HD (CONTENEDOR DE 1 PÁGINA + BARRA IMAGEN 1)
 // ============================================================================
-let currentOpenFileKey = null;
+let currentOpenFileKey = "u6";
+let currentLoadedPdfKey = null;
 let currentFileZoom = 1.0;
 let isFileFullscreenMode = false;
 let activePdfRenderToken = 0;
+let isProgrammaticPdfScroll = false;
 
 if (typeof window !== "undefined" && window.pdfjsLib) {
   window.pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
@@ -589,44 +591,24 @@ function toggleArchivosMenu() {
 function applySplitScreenDOM(isOpen) {
   const toolbar = document.getElementById("archivosStickyToolbar");
   const rightPane = document.getElementById("archivosViewerPanel");
-  const leftCol = document.getElementById("leftStudyColumn");
-  const vidPlayerCol = document.getElementById("videoPlayerCardCol");
-  const vidInfoCol = document.getElementById("videoInfoCardCol");
-
-  if (!toolbar || !rightPane || !leftCol || !vidPlayerCol || !vidInfoCol) return;
-
-  if (isOpen) {
-    toolbar.classList.remove("hidden");
-    rightPane.classList.remove("hidden");
-    // Mitad izquierda (50%) para estudio; adentro el video va arriba y la info del video va justo debajo (como en imagen b35f94)
-    leftCol.classList.remove("lg:col-span-12");
-    leftCol.classList.add("lg:col-span-6");
-    vidPlayerCol.classList.remove("lg:col-span-6");
-    vidPlayerCol.classList.add("lg:col-span-12");
-    vidInfoCol.classList.remove("lg:col-span-6");
-    vidInfoCol.classList.add("lg:col-span-12");
-  } else {
-    toolbar.classList.add("hidden");
-    rightPane.classList.add("hidden");
+  if (toolbar) toolbar.classList.remove("hidden");
+  if (rightPane) rightPane.classList.remove("hidden");
+  if (!isOpen) {
     document.body.classList.remove("file-fullscreen");
     isFileFullscreenMode = false;
-    leftCol.classList.remove("lg:col-span-6");
-    leftCol.classList.add("lg:col-span-12");
-    vidPlayerCol.classList.remove("lg:col-span-12");
-    vidPlayerCol.classList.add("lg:col-span-6");
-    vidInfoCol.classList.remove("lg:col-span-12");
-    vidInfoCol.classList.add("lg:col-span-6");
+    const btn = document.getElementById("btnToggleSplitMode");
+    if (btn) btn.textContent = "⛶ Pantalla Completa";
   }
 }
 
 function toggleFileFullOrSplit() {
-  if (!currentOpenFileKey) return;
   isFileFullscreenMode = !isFileFullscreenMode;
   document.body.classList.toggle("file-fullscreen", isFileFullscreenMode);
   const btn = document.getElementById("btnToggleSplitMode");
   if (btn) {
-    btn.textContent = isFileFullscreenMode ? "◫ Volver a 50/50" : "⛶ Pantalla Completa";
+    btn.textContent = isFileFullscreenMode ? "◫ Salir de Pantalla Completa" : "⛶ Pantalla Completa";
   }
+  applyZoomToRenderedPages();
 }
 
 function adjustFileZoom(delta) {
@@ -644,10 +626,18 @@ function resetFileZoom() {
 }
 
 function applyZoomToRenderedPages() {
+  const isFitOnePage = Math.abs(currentFileZoom - 1.0) < 0.01;
   const pct = Math.round(currentFileZoom * 100) + "%";
   document.querySelectorAll(".hd-zoomable-page").forEach(el => {
-    el.style.width = pct;
-    el.style.maxWidth = currentFileZoom > 1.0 ? "none" : "100%";
+    if (isFitOnePage) {
+      el.classList.add("fit-one-page");
+      el.style.width = "auto";
+      el.style.maxWidth = "100%";
+    } else {
+      el.classList.remove("fit-one-page");
+      el.style.width = pct;
+      el.style.maxWidth = currentFileZoom > 1.0 ? "none" : "100%";
+    }
   });
 }
 
@@ -661,7 +651,31 @@ function base64ToUint8Array(b64) {
   return bytes;
 }
 
-async function openOriginalFileViewer(fileKey, pageNumber = 1) {
+function setupPdfScrollSync() {
+  const scrollBox = document.getElementById("archivosPagesScrollContainer");
+  if (!scrollBox || scrollBox.dataset.scrollSyncAttached === "1") return;
+  scrollBox.dataset.scrollSyncAttached = "1";
+  scrollBox.addEventListener("scroll", () => {
+    if (isProgrammaticPdfScroll) return;
+    const jumpSel = document.getElementById("archivosPageJumpSelect");
+    if (!jumpSel) return;
+    const slots = scrollBox.querySelectorAll("[id^='origPage_']");
+    const boxTop = scrollBox.scrollTop;
+    const boxMid = boxTop + scrollBox.clientHeight * 0.45;
+    let bestPage = 1;
+    slots.forEach(slot => {
+      const pNum = parseInt(slot.id.replace("origPage_", ""), 10);
+      if (!isNaN(pNum) && slot.offsetTop <= boxMid) {
+        bestPage = pNum;
+      }
+    });
+    if (String(jumpSel.value) !== String(bestPage)) {
+      jumpSel.value = String(bestPage);
+    }
+  }, { passive: true });
+}
+
+async function openOriginalFileViewer(fileKey, pageNumber = 1, opts = {}) {
   const menu = document.getElementById("archivosDropdownMenu");
   if (menu) menu.classList.add("hidden");
 
@@ -670,6 +684,7 @@ async function openOriginalFileViewer(fileKey, pageNumber = 1) {
 
   currentOpenFileKey = fileKey;
   applySplitScreenDOM(true);
+  setupPdfScrollSync();
 
   ["u6", "u7", "u8", "carpeta", "simulacro", "estructura"].forEach(k => {
     const pBtn = document.getElementById("pillFile_" + k);
@@ -684,28 +699,48 @@ async function openOriginalFileViewer(fileKey, pageNumber = 1) {
   if (titleEl) titleEl.textContent = docData.title;
 
   const totalPages = docData.numPages || (docData.pages ? docData.pages.length : 1);
+  const targetPageNum = Math.max(1, Math.min(totalPages, Number(pageNumber) || 1));
+
   if (jumpSel) {
     jumpSel.innerHTML = Array.from({ length: totalPages }, (_, idx) =>
-      `<option value="${idx + 1}" ${idx + 1 === Number(pageNumber) ? 'selected' : ''}>Ir a Página ${idx + 1} de ${totalPages}</option>`
+      `<option value="${idx + 1}" ${idx + 1 === targetPageNum ? 'selected' : ''}>Ir a Página ${idx + 1} de ${totalPages}</option>`
     ).join("");
   }
 
+  if (opts && opts.scrollToPdf) {
+    const pdfSec = document.getElementById("pdfViewerSection");
+    if (pdfSec) {
+      pdfSec.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
+  }
+
+  // Si el archivo ya está renderizado en el contenedor de 1 página, solo navegamos a la página solicitada
+  if (currentLoadedPdfKey === fileKey && scrollBox.querySelector("#origPage_" + targetPageNum)) {
+    scrollToOriginalPage(targetPageNum);
+    return;
+  }
+
+  currentLoadedPdfKey = fileKey;
   const myToken = ++activePdfRenderToken;
+  const isFitOnePage = Math.abs(currentFileZoom - 1.0) < 0.01;
+  const zoomClass = isFitOnePage ? "fit-one-page" : "";
+  const zoomStyle = isFitOnePage
+    ? "width: auto; max-width: 100%;"
+    : `width: ${Math.round(currentFileZoom * 100)}%; max-width: ${currentFileZoom > 1 ? 'none' : '100%'};`;
 
   if (docData.type === "pdf" && docData.pdfBase64) {
-    // Renderizado vectorial nítido con PDF.js en alta densidad de píxeles (sin pixelado)
     scrollBox.innerHTML = Array.from({ length: totalPages }, (_, idx) => `
-      <div id="origPage_${idx + 1}" class="bg-slate-900/85 p-3 md:p-4 rounded-2xl shadow-2xl space-y-2 text-center overflow-x-auto">
-        <div class="text-sm font-bold text-amber-300 font-patrick">
+      <div id="origPage_${idx + 1}" class="pdf-single-page-slot bg-slate-900/85 p-2.5 md:p-3.5 rounded-2xl shadow-2xl space-y-2 text-center overflow-x-auto">
+        <div class="text-xs md:text-sm font-bold text-amber-300 font-patrick">
           ${docData.title} — Página ${idx + 1} de ${totalPages} (Calidad Vectorial Original HD)
         </div>
-        <div id="pdfCanvasSlot_${idx + 1}" class="flex justify-center items-center min-h-[420px]">
-          <canvas id="pdfCanvas_${idx + 1}" class="hd-doc-page-canvas hd-zoomable-page" style="width: ${Math.round(currentFileZoom * 100)}%; max-width: ${currentFileZoom > 1 ? 'none' : '100%'};"></canvas>
+        <div id="pdfCanvasSlot_${idx + 1}" class="flex justify-center items-center flex-1 w-full">
+          <canvas id="pdfCanvas_${idx + 1}" class="hd-doc-page-canvas hd-zoomable-page ${zoomClass}" style="${zoomStyle}"></canvas>
         </div>
       </div>
     `).join("");
 
-    setTimeout(() => scrollToOriginalPage(pageNumber), 60);
+    setTimeout(() => scrollToOriginalPage(targetPageNum), 40);
 
     if (window.pdfjsLib) {
       try {
@@ -715,33 +750,38 @@ async function openOriginalFileViewer(fileKey, pageNumber = 1) {
         for (let pNum = 1; pNum <= pdfDoc.numPages; pNum++) {
           if (myToken !== activePdfRenderToken) return;
           const page = await pdfDoc.getPage(pNum);
-          const viewport = page.getViewport({ scale: 2.2 }); // Escala 2.2x Retina Ultra-Nítida
+          const viewport = page.getViewport({ scale: 2.2 });
           const canvas = document.getElementById("pdfCanvas_" + pNum);
           if (!canvas) continue;
           const ctx = canvas.getContext("2d");
           canvas.width = viewport.width;
           canvas.height = viewport.height;
           await page.render({ canvasContext: ctx, viewport }).promise;
+          if (pNum === targetPageNum && myToken === activePdfRenderToken) {
+            scrollToOriginalPage(targetPageNum);
+          }
         }
         if (myToken === activePdfRenderToken) {
-          setTimeout(() => scrollToOriginalPage(pageNumber), 80);
+          setTimeout(() => scrollToOriginalPage(targetPageNum), 60);
         }
       } catch (err) {
-        renderNativePdfEmbedFallback(docData, scrollBox, pageNumber);
+        renderNativePdfEmbedFallback(docData, scrollBox, targetPageNum);
       }
     } else {
-      renderNativePdfEmbedFallback(docData, scrollBox, pageNumber);
+      renderNativePdfEmbedFallback(docData, scrollBox, targetPageNum);
     }
   } else if (docData.pages) {
     scrollBox.innerHTML = docData.pages.map((dataUri, idx) => `
-      <div id="origPage_${idx + 1}" class="bg-slate-900/85 p-3 md:p-4 rounded-2xl shadow-2xl space-y-2 text-center overflow-x-auto">
-        <div class="text-sm font-bold text-amber-300 font-patrick">
+      <div id="origPage_${idx + 1}" class="pdf-single-page-slot bg-slate-900/85 p-2.5 md:p-3.5 rounded-2xl shadow-2xl space-y-2 text-center overflow-x-auto">
+        <div class="text-xs md:text-sm font-bold text-amber-300 font-patrick">
           ${docData.title} — Página ${idx + 1} de ${docData.pages.length} (Imagen Original HD)
         </div>
-        <img src="${dataUri}" alt="Página original ${idx + 1}" class="hd-doc-page-img hd-zoomable-page" style="width: ${Math.round(currentFileZoom * 100)}%; max-width: ${currentFileZoom > 1 ? 'none' : '100%'};">
+        <div class="flex justify-center items-center flex-1 w-full">
+          <img src="${dataUri}" alt="Página original ${idx + 1}" class="hd-doc-page-img hd-zoomable-page ${zoomClass}" style="${zoomStyle}">
+        </div>
       </div>
     `).join("");
-    setTimeout(() => scrollToOriginalPage(pageNumber), 60);
+    setTimeout(() => scrollToOriginalPage(targetPageNum), 50);
   }
 }
 
@@ -751,7 +791,7 @@ function renderNativePdfEmbedFallback(docData, scrollBox, pageNumber) {
     const blob = new Blob([pdfBytes], { type: "application/pdf" });
     const url = URL.createObjectURL(blob) + "#page=" + pageNumber;
     scrollBox.innerHTML = `
-      <div id="origPage_${pageNumber}" class="w-full h-[calc(100vh-210px)] bg-slate-900 rounded-2xl overflow-hidden shadow-2xl">
+      <div id="origPage_${pageNumber}" class="w-full h-full min-h-[600px] bg-slate-900 rounded-2xl overflow-hidden shadow-2xl">
         <iframe src="${url}" class="w-full h-full border-0" title="${docData.title}"></iframe>
       </div>
     `;
@@ -766,18 +806,21 @@ function scrollToOriginalPage(pageNum) {
   const target = document.getElementById("origPage_" + pageNum);
   const scrollBox = document.getElementById("archivosPagesScrollContainer");
   if (target && scrollBox) {
+    isProgrammaticPdfScroll = true;
     scrollBox.scrollTo({
-      top: Math.max(0, target.offsetTop - 12),
+      top: Math.max(0, target.offsetTop - 8),
       behavior: "smooth"
     });
+    setTimeout(() => { isProgrammaticPdfScroll = false; }, 450);
   } else if (target) {
     target.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 }
 
 function closeOriginalFileViewer() {
-  currentOpenFileKey = null;
-  applySplitScreenDOM(false);
+  if (isFileFullscreenMode) {
+    toggleFileFullOrSplit();
+  }
 }
 
 
@@ -3824,7 +3867,7 @@ function initOrUpdateYouTubeEmbed(overrideStartSec) {
   iframe.src = `https://www.youtube-nocookie.com/embed/${v.ytId}?enablejsapi=1&rel=0${startQuery}`;
 }
 
-function selectVideoById(videoId, customStartSec = null) {
+function selectVideoById(videoId, customStartSec = null, syncConceptAndPdf = true) {
   const match = findUnitAndVideoById(videoId);
   if (match && match.unitKey !== currentUnit) {
     currentUnit = match.unitKey;
@@ -3834,7 +3877,6 @@ function selectVideoById(videoId, customStartSec = null) {
     });
     const activeBtn = document.getElementById("navBtn" + currentUnit.toUpperCase());
     if (activeBtn) activeBtn.classList.add("active");
-    renderConceptPillsAndDevelopment();
     renderFormulaSheet(currentUnit);
     renderCalculatorSheet(currentUnit);
   }
@@ -3844,29 +3886,45 @@ function selectVideoById(videoId, customStartSec = null) {
   if (!found) return;
 
   activeVideoObj = found;
-  renderVideoBars();
-  renderVideoConceptsBox();
-  initOrUpdateYouTubeEmbed(customStartSec);
 
-  // Si la vista dividida de archivo está abierta, sincronizamos automáticamente el PDF a la página donde habla de este video
-  if (currentOpenFileKey && (currentOpenFileKey === "u6" || currentOpenFileKey === "u7" || currentOpenFileKey === "u8")) {
-    const targetPage = (found.pdfPages && found.pdfPages[0]) ? found.pdfPages[0] : 1;
-    if (currentOpenFileKey !== currentUnit) {
-      openOriginalFileViewer(currentUnit, targetPage);
-    } else {
-      scrollToOriginalPage(targetPage);
+  // Sincronizar automáticamente el concepto teórico correlacionado con este video si existe
+  if (syncConceptAndPdf) {
+    const unitConcepts = getCurrentUnitConcepts();
+    const matchedConcept = unitConcepts.find(c => c.videoRefId === found.id) ||
+      unitConcepts.find(c => found.pdfPages && found.pdfPages.includes(c.pdfPageNum));
+    if (matchedConcept && matchedConcept.id !== currentConceptId) {
+      currentConceptId = matchedConcept.id;
+    }
+    renderConceptPillsAndDevelopment(false);
+
+    // Sincronizar también el filtro/ejercicio correlacionado con el video
+    const matchedEx = GUIDED_EXERCISES.find(e => e.videoRefId === found.id);
+    if (matchedEx) {
+      if (currentExerciseUnitFilter !== "all" && currentExerciseUnitFilter !== matchedEx.unit) {
+        currentExerciseUnitFilter = matchedEx.unit;
+      }
+      currentExerciseId = matchedEx.id;
+      renderBottomBoxes(false);
     }
   }
+
+  renderVideoBars();
+  renderVideoConceptsBox();
+  renderVideoCorrelatedRefsBox();
+  initOrUpdateYouTubeEmbed(customStartSec);
+
+  // Actualizar el contenedor de PDF correspondiente en la columna derecha a la página del video
+  const targetPage = (found.pdfPages && found.pdfPages[0]) ? found.pdfPages[0] : 1;
+  openOriginalFileViewer(currentUnit, targetPage);
 }
 
-// Al apretar 'Ver en Video', lleva al instante del video, divide la pantalla 50/50 con el PDF abierto a la derecha en la página exacta, y a la izquierda el video con su ventana de info debajo (imagen b35f94)
+// Al apretar 'Ver en Video + PDF', lleva al instante del video y sincroniza el contenedor de PDF a la página exacta
 function jumpToVideoConcept(videoId, sec, pdfFileKey = null, pdfPageNum = null) {
-  selectVideoById(videoId, sec);
+  selectVideoById(videoId, sec, false);
   const targetFile = pdfFileKey || currentUnit;
   const targetPage = pdfPageNum || (activeVideoObj && activeVideoObj.pdfPages && activeVideoObj.pdfPages[0]) || 1;
-  openOriginalFileViewer(targetFile, targetPage);
-  const topEl = document.getElementById("topVideoSection");
-  if (topEl) topEl.scrollIntoView({ behavior: "smooth", block: "start" });
+  openOriginalFileViewer(targetFile, targetPage, { scrollToPdf: true });
+  renderVideoCorrelatedRefsBox();
 }
 
 function adjustSavedTimeManual(deltaSec) {
@@ -3874,7 +3932,7 @@ function adjustSavedTimeManual(deltaSec) {
   const cur = savedVideoTimes[activeVideoObj.id] || 0;
   const next = Math.max(0, Math.min(activeVideoObj.durationSec, cur + deltaSec));
   saveVideoTime(activeVideoObj.id, next);
-  selectVideoById(activeVideoObj.id, next);
+  selectVideoById(activeVideoObj.id, next, false);
 }
 
 function renderSingleBarRowHtml(list, rowClass, rowLabel) {
@@ -3913,6 +3971,111 @@ function renderVideoBars() {
   barsContainer.innerHTML =
     renderSingleBarRowHtml(rows.row1, "row-playlist", rows.row1Label) +
     renderSingleBarRowHtml(rows.row2, "row-alvaro", rows.row2Label);
+}
+
+// ============================================================================
+// NUEVO PANEL DINÁMICO DEBAJO DE LOS VIDEOS: INFO CORRELACIONADA ENTRE VIDEO Y ARCHIVOS (IMÁGENES 2, 3 Y 4)
+// ============================================================================
+function renderVideoCorrelatedRefsBox() {
+  const refBox = document.getElementById("videoDynamicFileRefsBox");
+  if (!refBox) return;
+
+  const allVids = getAllVideosForUnit(currentUnit);
+  if (!activeVideoObj) activeVideoObj = allVids[0];
+  const v = activeVideoObj;
+  if (!v) return;
+
+  // Concepto correlacionado con el video actual o el concepto activo que se está mirando
+  const concepts = getCurrentUnitConcepts();
+  const corrConcept = concepts.find(c => c.id === currentConceptId) ||
+    concepts.find(c => c.videoRefId === v.id) ||
+    concepts[0];
+
+  // Ejercicio correlacionado con el video actual o el ejercicio activo que se está viendo
+  const filteredEx = getFilteredGuidedExercises();
+  const corrEx = GUIDED_EXERCISES.find(e => e.videoRefId === v.id) ||
+    filteredEx.find(e => e.id === currentExerciseId) ||
+    GUIDED_EXERCISES[0];
+
+  const primaryConceptSec = (v.keyConcepts && v.keyConcepts[0]) ? v.keyConcepts[0].sec : 0;
+  const videoPdfPagesStr = (v.pdfPages && v.pdfPages.length) ? v.pdfPages.join(", ") : "1";
+  const videoFirstPage = (v.pdfPages && v.pdfPages[0]) ? v.pdfPages[0] : 1;
+
+  refBox.innerHTML = `
+    <div class="rounded-2xl bg-slate-950/65 border border-slate-800/90 p-3 space-y-2.5 text-center">
+      <div class="flex items-center justify-between gap-2 px-1 border-b border-slate-800/80 pb-1.5">
+        <span class="text-xs font-bold text-amber-300 font-patrick tracking-wide uppercase">
+          🔗 Correlación Video ↔ Archivos (${v.shortLabel || v.code})
+        </span>
+        <span class="text-[11px] text-cyan-300 font-patrick">
+          PDF ${currentUnit.toUpperCase()} • Págs. ${videoPdfPagesStr}
+        </span>
+      </div>
+
+      <!-- 1. Botones de Imagen 2: Reproducir Minuto del Video + Abrir PDF a la Derecha (Págs. del Video) -->
+      <div class="space-y-1.5">
+        ${(v.keyConcepts || []).map(kc => `
+          <div class="flex flex-wrap items-center justify-center gap-2">
+            <button
+              type="button"
+              onclick="selectVideoById('${v.id}', ${kc.sec}, false)"
+              class="px-3.5 py-1 text-xs md:text-sm font-bold rounded-full bg-amber-500/95 hover:bg-amber-400 text-slate-950 font-patrick transition shadow"
+              title="${kc.subtitle}">
+              ▶ Reproducir Min ${formatMMSS(kc.sec)}
+            </button>
+            <button
+              type="button"
+              onclick="openOriginalFileViewer('${currentUnit}', ${videoFirstPage}, { scrollToPdf: true })"
+              class="px-3.5 py-1 text-xs md:text-sm font-bold rounded-full bg-cyan-500/25 hover:bg-cyan-500/45 text-cyan-200 border border-cyan-500/30 font-patrick transition">
+              📄 Abrir PDF a la Derecha (Págs. ${videoPdfPagesStr})
+            </button>
+          </div>
+        `).join("")}
+      </div>
+
+      <!-- 2. Botones de Imagen 3: Abrir PDF en Vista Dividida (Pág. X) + Ver en Video + PDF (Vista 50/50) -->
+      ${corrConcept ? `
+        <div class="pt-1.5 border-t border-slate-800/70 space-y-1">
+          <div class="text-[11px] text-slate-300 font-patrick">
+            📚 Desarrollo correlacionado: <strong class="text-amber-200">${corrConcept.shortBtn}</strong> (${corrConcept.pdfPages})
+          </div>
+          <div class="flex flex-wrap items-center justify-center gap-2">
+            <button
+              type="button"
+              onclick="openOriginalFileViewer('${currentUnit}', ${corrConcept.pdfPageNum}, { scrollToPdf: true })"
+              class="px-3.5 py-1 text-xs md:text-sm font-bold rounded-full bg-amber-400 hover:bg-amber-300 text-slate-950 font-patrick transition shadow">
+              📄 Abrir PDF en Vista Dividida (Pág. ${corrConcept.pdfPageNum})
+            </button>
+            <button
+              type="button"
+              onclick="jumpToVideoConcept('${corrConcept.videoRefId || v.id}', ${corrConcept.videoRefSec || primaryConceptSec}, '${currentUnit}', ${corrConcept.pdfPageNum})"
+              class="px-3.5 py-1 text-xs md:text-sm font-bold rounded-full bg-cyan-400/30 hover:bg-cyan-400/50 text-cyan-100 border border-cyan-500/30 font-patrick transition">
+              🎥 Ver en Video + PDF (Vista 50/50)
+            </button>
+          </div>
+        </div>
+      ` : ""}
+
+      <!-- 3. Botones de Imagen 4: Ver Hoja Escaneada del Parcial (50/50) y Archivo de Práctica Correlacionado -->
+      <div class="pt-1.5 border-t border-slate-800/70 flex flex-wrap items-center justify-center gap-2">
+        <button
+          type="button"
+          onclick="openOriginalFileViewer('simulacro', 1, { scrollToPdf: true })"
+          class="px-3.5 py-1 rounded-full text-xs md:text-sm font-bold bg-cyan-500/25 hover:bg-cyan-400 hover:text-slate-950 text-cyan-200 border border-cyan-500/30 font-patrick transition">
+          📄 Ver Hoja Escaneada del Parcial (50/50)
+        </button>
+        ${corrEx ? `
+          <button
+            type="button"
+            onclick="selectGuidedExercise('${corrEx.id}'); jumpToVideoConcept('${corrEx.videoRefId || v.id}', ${corrEx.videoRefSec || 0}, '${corrEx.pdfFile || currentUnit}', ${corrEx.pdfPage || videoFirstPage})"
+            class="px-3.5 py-1 rounded-full text-xs md:text-sm font-bold bg-purple-500/25 hover:bg-purple-400 hover:text-slate-950 text-purple-200 border border-purple-500/30 font-patrick transition"
+            title="${corrEx.title}">
+            🎥 Ver en Video + Archivo (${corrEx.title.split("•")[0].trim()})
+          </button>
+        ` : ""}
+      </div>
+    </div>
+  `;
 }
 
 function updateVideoBarsProgressUI() {
@@ -3960,7 +4123,7 @@ function renderVideoConceptsBox() {
         <div class="flex flex-wrap items-center justify-center gap-2">
           <button type="button" onclick="adjustSavedTimeManual(-30)" class="px-3.5 py-1 text-sm rounded-full bg-slate-800/90 hover:bg-slate-700 text-cyan-200 font-patrick">⏪ -30s</button>
           <button type="button" onclick="adjustSavedTimeManual(30)" class="px-3.5 py-1 text-sm rounded-full bg-slate-800/90 hover:bg-slate-700 text-cyan-200 font-patrick">+30s ⏩</button>
-          <button type="button" onclick="saveVideoTime('${v.id}', 0); selectVideoById('${v.id}', 0)" class="px-3.5 py-1 text-sm rounded-full bg-slate-800/90 hover:bg-amber-500 text-amber-200 hover:text-slate-950 font-patrick">↺ 00:00</button>
+          <button type="button" onclick="saveVideoTime('${v.id}', 0); selectVideoById('${v.id}', 0, false)" class="px-3.5 py-1 text-sm rounded-full bg-slate-800/90 hover:bg-amber-500 text-amber-200 hover:text-slate-950 font-patrick">↺ 00:00</button>
         </div>
         <img src="${v.sciIcon}" alt="Ciencia" class="w-14 h-14 object-contain sprite-no-bg anim-sci-icon">
       </div>
@@ -3974,10 +4137,10 @@ function renderVideoConceptsBox() {
               ${kc.formulaHtml}
             </div>
             <div class="pt-1 flex flex-wrap items-center justify-center gap-2.5">
-              <button type="button" onclick="selectVideoById('${v.id}', ${kc.sec})" class="px-4 py-1 text-sm font-bold rounded-full bg-amber-500/90 hover:bg-amber-400 text-slate-950 font-patrick transition">
+              <button type="button" onclick="selectVideoById('${v.id}', ${kc.sec}, false)" class="px-4 py-1 text-sm font-bold rounded-full bg-amber-500/90 hover:bg-amber-400 text-slate-950 font-patrick transition">
                 ▶ Reproducir Min ${formatMMSS(kc.sec)}
               </button>
-              <button type="button" onclick="openOriginalFileViewer('${currentUnit}', ${v.pdfPages[0] || 1})" class="px-4 py-1 text-sm font-bold rounded-full bg-cyan-500/25 hover:bg-cyan-500/45 text-cyan-200 font-patrick transition">
+              <button type="button" onclick="openOriginalFileViewer('${currentUnit}', ${v.pdfPages[0] || 1}, { scrollToPdf: true })" class="px-4 py-1 text-sm font-bold rounded-full bg-cyan-500/25 hover:bg-cyan-500/45 text-cyan-200 font-patrick transition">
                 📄 Abrir PDF a la Derecha (Págs. ${v.pdfPages.join(', ')})
               </button>
             </div>
@@ -3989,7 +4152,7 @@ function renderVideoConceptsBox() {
 }
 
 // ============================================================================
-// 10. CAJA CENTRAL: BARRA DE CONCEPTOS + DESARROLLO TEÓRICO
+// 10. CAJA DE DESARROLLO TEÓRICO: BARRA DE CONCEPTOS + DESARROLLO DE LA INFO
 // ============================================================================
 function getCurrentUnitConcepts() {
   if (currentUnit === "u6") return UNIDAD_6_CONCEPTS;
@@ -3998,10 +4161,11 @@ function getCurrentUnitConcepts() {
 
 function selectConceptPill(conceptId) {
   currentConceptId = conceptId;
-  renderConceptPillsAndDevelopment();
+  renderConceptPillsAndDevelopment(true);
+  renderVideoCorrelatedRefsBox();
 }
 
-function renderConceptPillsAndDevelopment() {
+function renderConceptPillsAndDevelopment(syncPdfPage = false) {
   const pillsBar = document.getElementById("dynamicConceptPillsBar");
   const devContainer = document.getElementById("unitDevelopmentContainer");
   if (!pillsBar || !devContainer) return;
@@ -4019,11 +4183,15 @@ function renderConceptPillsAndDevelopment() {
 
   const activeConcept = concepts.find(c => c.id === currentConceptId) || concepts[0];
 
+  if (syncPdfPage && activeConcept && activeConcept.pdfPageNum) {
+    openOriginalFileViewer(currentUnit, activeConcept.pdfPageNum);
+  }
+
   devContainer.innerHTML = `
     <article class="p-4 md:p-7 rounded-3xl bg-slate-950/35 space-y-6">
       <div class="flex flex-col md:flex-row items-center justify-center gap-5 pb-2">
         <img src="${activeConcept.capyImg}" alt="Capibara" class="w-20 h-20 object-contain sprite-no-bg anim-capy">
-        <div class="max-w-2xl text-center">
+        <div class="max-w-3xl text-center">
           <h3 class="text-2xl md:text-3xl font-bold text-amber-300 font-patrick">${activeConcept.title}</h3>
         </div>
         <img src="${activeConcept.sciIcon}" alt="Ícono Ciencia" class="w-16 h-16 object-contain sprite-no-bg anim-sci-icon">
@@ -4039,7 +4207,7 @@ function renderConceptPillsAndDevelopment() {
           <span class="text-base text-cyan-200 font-patrick">
             📚 <strong>Para profundizar en el PDF:</strong> Este tema se encuentra en <strong>${activeConcept.pdfPages}</strong>
           </span>
-          <button type="button" onclick="openOriginalFileViewer('${currentUnit}', ${activeConcept.pdfPageNum})" class="px-4 py-1.5 text-sm font-bold rounded-full bg-amber-400 hover:bg-amber-300 text-slate-950 font-patrick transition">
+          <button type="button" onclick="openOriginalFileViewer('${currentUnit}', ${activeConcept.pdfPageNum}, { scrollToPdf: true })" class="px-4 py-1.5 text-sm font-bold rounded-full bg-amber-400 hover:bg-amber-300 text-slate-950 font-patrick transition">
             📄 Abrir PDF en Vista Dividida (Pág. ${activeConcept.pdfPageNum})
           </button>
           <button type="button" onclick="jumpToVideoConcept('${activeConcept.videoRefId}', ${activeConcept.videoRefSec}, '${currentUnit}', ${activeConcept.pdfPageNum})" class="px-4 py-1.5 text-sm font-bold rounded-full bg-cyan-400/30 hover:bg-cyan-400/50 text-cyan-100 font-patrick transition">
@@ -4054,11 +4222,12 @@ function renderConceptPillsAndDevelopment() {
 }
 
 // ============================================================================
-// 11. CAJAS INFERIORES: 30 EJERCICIOS + 8 PROBLEMAS DE MODELO DE PARCIAL
+// 11. CAJAS DE EJERCICIOS Y LUEGO RESOLUCIÓN DE LOS EJERCICIOS
 // ============================================================================
 function setBottomMode(mode) {
   currentBottomMode = mode;
   renderBottomBoxes();
+  renderVideoCorrelatedRefsBox();
 }
 
 function setExerciseUnitFilter(uFilter) {
@@ -4068,6 +4237,7 @@ function setExerciseUnitFilter(uFilter) {
     currentExerciseId = filtered[0].id;
   }
   renderBottomBoxes();
+  renderVideoCorrelatedRefsBox();
 }
 
 function getFilteredGuidedExercises() {
@@ -4078,11 +4248,13 @@ function getFilteredGuidedExercises() {
 function selectGuidedExercise(exId) {
   currentExerciseId = exId;
   renderBottomBoxes();
+  renderVideoCorrelatedRefsBox();
 }
 
 function selectSimProblem(simId) {
   currentSimId = simId;
   renderBottomBoxes();
+  renderVideoCorrelatedRefsBox();
 }
 
 function confirmGuidedAttempt(exId) {
@@ -4093,6 +4265,8 @@ function confirmGuidedAttempt(exId) {
     userAttempt: userText || "Planteo verificado paso a paso."
   };
   renderBottomBoxes();
+  const resBox = document.getElementById("resolutionsCardBox");
+  if (resBox) resBox.scrollIntoView({ behavior: "smooth", block: "nearest" });
 }
 
 function evaluateSimulacro(simId) {
@@ -4114,6 +4288,8 @@ function evaluateSimulacro(simId) {
       feedbackBody = "Elige una opción y escribe tu justificación física para evaluar tanto el procedimiento como el resultado.";
       unlockedResolutions[simId] = { unlocked: false, feedbackTitle, feedbackBody, isCorrect: false };
       renderBottomBoxes();
+      const resBox = document.getElementById("resolutionsCardBox");
+      if (resBox) resBox.scrollIntoView({ behavior: "smooth", block: "nearest" });
       return;
     }
     isCorrect = (chosen === sim.correctOption);
@@ -4132,16 +4308,18 @@ function evaluateSimulacro(simId) {
       feedbackBody = "Escribe tu resultado numérico y las ecuaciones que planteaste para evaluar tu resolución.";
       unlockedResolutions[simId] = { unlocked: false, feedbackTitle, feedbackBody, isCorrect: false };
       renderBottomBoxes();
+      const resBox = document.getElementById("resolutionsCardBox");
+      if (resBox) resBox.scrollIntoView({ behavior: "smooth", block: "nearest" });
       return;
     }
     const relErr = Math.abs(parsed - sim.numericTarget) / sim.numericTarget;
     isCorrect = relErr <= sim.toleranceRel;
     if (isCorrect) {
       feedbackTitle = `✅ ¡Cálculo Exacto! Tu valor (${parsed} ${sim.unitTarget}) es correcto`;
-      feedbackBody = "Revisa a la derecha el desarrollo completo con despeje algebraico y análisis dimensional.";
+      feedbackBody = "Revisa en la sección de resolución debajo el desarrollo completo con despeje algebraico y análisis dimensional.";
     } else {
       feedbackTitle = `🔍 Ingresaste ${parsed}, y el valor esperado es ${sim.numericTarget} ${sim.unitTarget}`;
-      feedbackBody = "Revisa en la caja derecha la conversión de unidades al Sistema Internacional y el despeje paso a paso.";
+      feedbackBody = "Revisa en la sección de resolución debajo la conversión de unidades al Sistema Internacional y el despeje paso a paso.";
     }
   }
 
@@ -4152,6 +4330,8 @@ function evaluateSimulacro(simId) {
     isCorrect
   };
   renderBottomBoxes();
+  const resBox = document.getElementById("resolutionsCardBox");
+  if (resBox) resBox.scrollIntoView({ behavior: "smooth", block: "nearest" });
 }
 
 function renderBottomBoxes() {
@@ -4194,7 +4374,7 @@ function renderBottomBoxes() {
         <div class="p-4 md:p-5 rounded-3xl bg-slate-950/50 space-y-3 border border-slate-800/80">
           <div class="flex items-center justify-between gap-2 flex-wrap">
             <span class="px-3 py-0.5 rounded-full text-xs font-bold bg-amber-500/20 text-amber-300 font-patrick">${ex.sourceBadge || "Guía Oficial"}</span>
-            <div class="flex items-center gap-2">
+            <div class="flex items-center gap-2 flex-wrap">
               ${ex.videoRefId ? `
                 <button type="button" onclick="jumpToVideoConcept('${ex.videoRefId}', ${ex.videoRefSec || 0}, '${ex.pdfFile || ex.unit}', ${ex.pdfPage || 1})" class="px-3 py-1 rounded-full text-xs font-bold bg-cyan-500/25 hover:bg-cyan-400 hover:text-slate-950 text-cyan-200 font-patrick transition">
                   🎥 Ver en Video + Archivo (50/50)
@@ -4240,7 +4420,7 @@ function renderBottomBoxes() {
             class="w-full max-w-md mx-auto block px-4 py-2 rounded-xl bg-slate-950/85 text-white text-center text-sm focus:outline-none focus:ring-2 focus:ring-amber-400">
           <div class="pt-1">
             <button type="button" onclick="confirmGuidedAttempt('${ex.id}')" class="px-6 py-2.5 rounded-full font-bold text-base bg-gradient-to-r from-amber-400 via-amber-500 to-cyan-400 text-slate-950 hover:opacity-95 transition shadow-lg font-patrick">
-              ✅ Confirmar Planteo y Ver Resolución a la Derecha →
+              ✅ Confirmar Planteo y Ver Resolución Debajo ↓
             </button>
           </div>
         </div>
@@ -4254,8 +4434,8 @@ function renderBottomBoxes() {
           <h3 class="text-2xl font-bold text-amber-300 font-patrick">
             Resoluciones Paso a Paso
           </h3>
-          <p class="prose-justify-sm max-w-md">
-            Revisa primero en la caja izquierda los datos, unidades, esquema mental y leyes a aplicar para <strong>${ex.title}</strong>. Cuando confirmes tu intento se desplegará aquí el desarrollo completo con fracciones reales de 2 pisos y análisis dimensional.
+          <p class="prose-justify-sm max-w-xl">
+            Revisa primero en la sección de ejercicios arriba los datos, unidades, esquema mental y leyes a aplicar para <strong>${ex.title}</strong>. Cuando confirmes tu intento se desplegará aquí el desarrollo completo con fracciones reales de 2 pisos y análisis dimensional.
           </p>
           <button type="button" onclick="confirmGuidedAttempt('${ex.id}')" class="px-6 py-2 rounded-full font-bold text-base bg-amber-400 hover:bg-amber-300 text-slate-950 transition shadow-md font-patrick">
             🔓 Mostrar Resolución Completa Ahora
@@ -4299,7 +4479,7 @@ function renderBottomBoxes() {
           <h3 class="text-xl md:text-2xl font-bold text-amber-300 font-patrick">
             Simulacro Oficial de 2° Parcial (Los 8 Puntos)
           </h3>
-          <button type="button" onclick="openOriginalFileViewer('simulacro', 1)" class="px-3.5 py-1 rounded-full text-sm font-bold bg-cyan-500/25 hover:bg-cyan-400 hover:text-slate-950 text-cyan-200 font-patrick transition">
+          <button type="button" onclick="openOriginalFileViewer('simulacro', 1, { scrollToPdf: true })" class="px-3.5 py-1 rounded-full text-sm font-bold bg-cyan-500/25 hover:bg-cyan-400 hover:text-slate-950 text-cyan-200 font-patrick transition">
             📄 Ver Hoja Escaneada del Parcial (50/50)
           </button>
         </div>
@@ -4343,7 +4523,7 @@ function renderBottomBoxes() {
 
           <div class="pt-2 text-center">
             <button type="button" onclick="evaluateSimulacro('${sim.id}')" class="px-6 py-2.5 rounded-full font-bold text-base bg-gradient-to-r from-amber-400 via-amber-500 to-cyan-400 text-slate-950 hover:opacity-95 transition shadow-lg font-patrick">
-              📝 Evaluar Respuesta y Procedimiento →
+              📝 Evaluar Respuesta y Procedimiento ↓
             </button>
           </div>
         </div>
@@ -4357,8 +4537,8 @@ function renderBottomBoxes() {
           <h3 class="text-2xl font-bold text-amber-300 font-patrick">
             Corrección del Modelo de 2° Parcial
           </h3>
-          <p class="prose-justify-sm max-w-md">
-            Completa tu planteo y tu respuesta para <strong>${sim.title}</strong> en la columna izquierda y presiona Evaluar para ver la corrección detallada paso a paso.
+          <p class="prose-justify-sm max-w-xl">
+            Completa tu planteo y tu respuesta para <strong>${sim.title}</strong> en la sección de ejercicios arriba y presiona Evaluar para ver la corrección detallada paso a paso.
           </p>
         </div>
       `;
@@ -4407,14 +4587,15 @@ function switchTopNav(target) {
 
     renderVideoBars();
     renderVideoConceptsBox();
+    renderVideoCorrelatedRefsBox();
     initOrUpdateYouTubeEmbed(null);
-    renderConceptPillsAndDevelopment();
+    renderConceptPillsAndDevelopment(false);
     renderFormulaSheet(currentUnit);
     renderCalculatorSheet(currentUnit);
 
-    if (currentOpenFileKey && (currentOpenFileKey === "u6" || currentOpenFileKey === "u7" || currentOpenFileKey === "u8")) {
-      openOriginalFileViewer(currentUnit, 1);
-    }
+    const firstPage = (activeVideoObj && activeVideoObj.pdfPages && activeVideoObj.pdfPages[0]) ? activeVideoObj.pdfPages[0] : 1;
+    openOriginalFileViewer(currentUnit, firstPage);
+
     window.scrollTo({ top: 0, behavior: "smooth" });
   } else if (target === "ejercicios") {
     const activeBtn = document.getElementById("navBtnEj");
@@ -4431,15 +4612,15 @@ function switchTopNav(target) {
   }
 }
 
-// Listener global de tecla 'Esc' (Escape) para cerrar Archivos, Calculadora y Fórmulas
+// Listener global de tecla 'Esc' (Escape) para cerrar Pantalla Completa de PDF, Menú Archivos, Calculadora y Fórmulas
 window.addEventListener("keydown", (e) => {
   if (e.key === "Escape") {
     const menu = document.getElementById("archivosDropdownMenu");
     if (menu && !menu.classList.contains("hidden")) {
       menu.classList.add("hidden");
     }
-    if (currentOpenFileKey !== null) {
-      closeOriginalFileViewer();
+    if (isFileFullscreenMode) {
+      toggleFileFullOrSplit();
     }
     if (isCalculatorDrawerOpen) {
       toggleCalculatorDrawer(false);
@@ -4458,8 +4639,11 @@ window.addEventListener("DOMContentLoaded", () => {
   renderCalculatorSheet("u6");
   renderVideoBars();
   renderVideoConceptsBox();
+  renderVideoCorrelatedRefsBox();
   initOrUpdateYouTubeEmbed(null);
   startFallbackProgressTimer();
-  renderConceptPillsAndDevelopment();
+  renderConceptPillsAndDevelopment(false);
   renderBottomBoxes();
+  const initialPage = (activeVideoObj && activeVideoObj.pdfPages && activeVideoObj.pdfPages[0]) ? activeVideoObj.pdfPages[0] : 1;
+  openOriginalFileViewer("u6", initialPage);
 });
